@@ -1,0 +1,127 @@
+# Ubicación en el repositorio: .github/workflows/qa.yml  (en la raíz de SmartBudget)
+name: QA Picksy
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:        # botón "Run workflow" para ejecutarlo a mano
+
+jobs:
+  pruebas:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+
+    env:
+      # Base de datos DESECHABLE que solo existe durante la prueba.
+      # No son credenciales reales ni tocan tu PostgreSQL local.
+      DB_USER: postgres
+      DB_PASSWORD: ci_password_no_secreta
+      DB_HOST: localhost
+      DB_PORT: "5432"
+      DB_NAME: smartbudget
+      # Solo para saber si los secretos del correo están configurados
+      MAIL_USERNAME: ${{ secrets.MAIL_USERNAME }}
+
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: ci_password_no_secreta
+          POSTGRES_DB: smartbudget
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+    defaults:
+      run:
+        working-directory: Picksy_Backend
+
+    steps:
+      - name: Descargar el código
+        uses: actions/checkout@v5
+
+      - name: Instalar Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.14"
+          cache: pip
+          cache-dependency-path: Picksy_Backend/requirements.txt
+
+      - name: Instalar dependencias
+        run: pip install -r requirements.txt pytest pytest-html
+
+      - name: Preparar base de datos
+        run: python preparar_base.py
+
+      - name: Pruebas rápidas (API y base de datos)
+        id: rapidas
+        run: pytest test_api.py -v -m "not slow" --html=reporte_rapidas.html --self-contained-html
+
+      - name: Pruebas con tiendas reales
+        id: tiendas
+        if: ${{ !cancelled() }}
+        continue-on-error: true
+        run: pytest test_api.py -v -m slow --html=reporte_tiendas.html --self-contained-html
+
+      - name: Calcular resultado
+        id: res
+        if: ${{ always() }}
+        run: |
+          if [ "${{ steps.rapidas.outcome }}" = "success" ] && [ "${{ steps.tiendas.outcome }}" = "success" ]; then
+            echo "estado=PASARON" >> "$GITHUB_OUTPUT"
+            echo "icono=✅" >> "$GITHUB_OUTPUT"
+          else
+            echo "estado=TIENEN FALLOS" >> "$GITHUB_OUTPUT"
+            echo "icono=❌" >> "$GITHUB_OUTPUT"
+          fi
+          {
+            echo "## Resultado QA Picksy"
+            echo "- Pruebas rápidas (API y BD): ${{ steps.rapidas.outcome }}"
+            echo "- Pruebas con tiendas reales: ${{ steps.tiendas.outcome }}"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Guardar reportes HTML
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: reportes-qa
+          path: Picksy_Backend/reporte_*.html
+          if-no-files-found: ignore
+          retention-days: 90
+
+      - name: Enviar correo con el resultado
+        if: ${{ always() && env.MAIL_USERNAME != '' }}
+        uses: dawidd6/action-send-mail@v18
+        with:
+          server_address: smtp.gmail.com
+          server_port: 465
+          secure: true
+          username: ${{ secrets.MAIL_USERNAME }}
+          password: ${{ secrets.MAIL_PASSWORD }}
+          to: ${{ secrets.MAIL_TO }}
+          from: "Picksy QA <${{ secrets.MAIL_USERNAME }}>"
+          subject: "${{ steps.res.outputs.icono }} Picksy QA: las pruebas ${{ steps.res.outputs.estado }} (${{ github.ref_name }})"
+          body: |
+            Se ejecutaron las pruebas automatizadas de Picksy.
+
+            Resultado general: ${{ steps.res.outputs.estado }}
+            - Pruebas rápidas (API y base de datos): ${{ steps.rapidas.outcome }}
+            - Pruebas con tiendas reales: ${{ steps.tiendas.outcome }}
+
+            Lanzado por: ${{ github.actor }}
+            Evento: ${{ github.event_name }}
+            Rama: ${{ github.ref_name }}
+            Commit: ${{ github.sha }}
+
+            Detalle completo: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+
+            Los reportes HTML van adjuntos.
+          attachments: Picksy_Backend/reporte_*.html
