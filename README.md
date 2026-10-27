@@ -5,7 +5,7 @@ Aplicación web que permite buscar un producto con un presupuesto máximo y comp
 ## Tecnologías
 - Backend: Python + FastAPI (puerto 8000)
 - Frontend: HTML, CSS y JavaScript (puerto 5500)
-- Base de datos: PostgreSQL (smartbudget)
+- Base de datos: PostgreSQL (Picksy)
 
 ## Cómo ejecutar
 ### Backend
