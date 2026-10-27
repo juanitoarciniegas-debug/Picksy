@@ -1,5 +1,5 @@
 .env
 venv/
 __pycache__/
-reporte_qa.html
+reporte_qa*.html
 .pytest_cache/

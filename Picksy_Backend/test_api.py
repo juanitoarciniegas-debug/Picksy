@@ -68,7 +68,7 @@ def exigir_resultados(data):
         pytest.skip(f"Sin resultados de las tiendas. Avisos: {data.get('avisos')}")
 
 
-def consulta_db(sql, params=()):
+def consulta_db(sql, params=None):
     import psycopg2
     con = psycopg2.connect(
         dbname=os.getenv("DB_NAME"), user=os.getenv("DB_USER"),
