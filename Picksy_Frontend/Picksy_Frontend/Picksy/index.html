@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Picksy te ayuda a comparar productos y encontrar mejores precios.">
+  <title>Picksy | Compra mejor, ahorra más</title>
+  <link rel="stylesheet" href="css/styles.css">
+  <!-- CAMBIO (backend): estilos de las tarjetas con imagen y de los mensajes de la búsqueda -->
+  <link rel="stylesheet" href="css/busqueda.css">
+  <!-- CAMBIO (backend): api.js (conexión con el backend) debe cargarse ANTES de app.js -->
+  <script src="js/api.js" defer></script>
+  <script src="js/app.js" defer></script>
+</head>
+
+<body class="app-body">
+  <header class="topbar">
+    <a class="brand" href="index.html" aria-label="Picksy, página principal">
+      <span class="brand-mark" aria-hidden="true">
+        <svg viewBox="0 0 48 48" role="img" aria-label="Hoja Picksy">
+          <path d="M39 7C20 7 8 15 8 29c0 7 5 12 12 12C34 41 40 24 39 7Z" fill="currentColor" />
+          <path d="M10 39C17 28 23 22 33 15" fill="none" stroke="#F5F4D0" stroke-width="3" stroke-linecap="round" />
+        </svg>
+      </span>
+      <span>picksy</span>
+    </a>
+    <nav class="main-nav" aria-label="Navegación principal">
+      <button class="nav-link active" data-view="buscar">Buscar productos</button>
+      <button class="nav-link" data-view="historial">Mi historial</button>
+    </nav>
+    <div class="header-actions">
+      <span class="user-greeting">¡Hola, visitante!</span>
+      <a class="avatar" href="login.html" aria-label="Ir a iniciar sesión">V</a>
+    </div>
+  </header>
+
+  <main class="page-wrap">
+    <section class="hero" id="hero">
+      <div class="hero-copy">
+        <span class="eyebrow"><span class="eyebrow-dot"></span> Compra inteligente</span>
+        <h1>Encuentra lo que quieres.<br><span>Paga menos.</span></h1>
+        <p>Compara opciones, descubre buenos precios y dale más valor a tu dinero.</p>
+        
+        <!-- Buscador principal de Picksy -->
+        <form class="search-form" id="searchForm">
+
+          <span class="search-icon" aria-hidden="true">⌕</span>
+
+          <!-- El usuario escribe el producto que quiere encontrar -->
+          <input type="search" id="searchInput" name="producto" placeholder="¿Qué estás buscando hoy?"
+            aria-label="Producto que quieres buscar">
+
+          <!-- El usuario establece su presupuesto máximo -->
+          <input type="number" id="budgetInput" name="presupuesto" placeholder="Presupuesto ($)"
+            aria-label="Presupuesto máximo en pesos colombianos" min="0" step="1000">
+
+          <button type="submit" class="button button-primary">
+            Buscar
+          </button>
+
+        </form>
+
+        <!-- Mensaje para validar el presupuesto o mostrar resultados -->
+        <p id="searchFeedback" class="muted" aria-live="polite"></p>
+        <div class="popular-searches">
+          <span>Popular:</span>
+          <button type="button" class="search-chip" data-query="mochila">Mochilas</button>
+          <button type="button" class="search-chip" data-query="audífonos">Audífonos</button>
+          <button type="button" class="search-chip" data-query="tenis">Tenis</button>
+        </div>
+      </div>
+      <div class="hero-art" aria-hidden="true">
+        <div class="art-circle"></div>
+        <div class="floating-tag tag-save">Ahorra hasta <strong>25%</strong></div>
+        <div class="bag-illustration">
+          <div class="bag-handle"></div>
+          <div class="bag-leaf">✦</div>
+          <div class="bag-face"><span></span><span></span></div>
+        </div>
+        <div class="floating-tag tag-price"><span>Precio encontrado</span><strong>$89.900</strong><small>Buen precio
+            ✨</small></div>
+        <span class="art-spark spark-one">✳</span><span class="art-spark spark-two">✦</span>
+      </div>
+    </section>
+
+    <section class="content-section" id="searchView">
+      <div class="section-heading">
+        <div>
+          <span class="eyebrow">Tu próxima compra</span>
+          <h2 id="resultsTitle">Productos destacados</h2>
+          <p class="muted" id="resultsSubtitle">Una selección para ayudarte a elegir mejor.</p>
+        </div>
+        <label class="sort-control">Ordenar por
+          <select id="sortSelect">
+            <option value="recommended">Recomendados</option>
+            <option value="low">Menor precio</option>
+            <option value="high">Mayor precio</option>
+          </select>
+        </label>
+      </div>
+
+      <div class="category-row" aria-label="Categorías">
+        <button class="category-pill active" data-category="Todos">✳ Todos</button>
+        <button class="category-pill" data-category="Tecnología">Tecnología</button>
+        <button class="category-pill" data-category="Accesorios">Accesorios</button>
+        <button class="category-pill" data-category="Moda">Moda</button>
+        <button class="category-pill" data-category="Hogar">Hogar</button>
+      </div>
+
+      <!-- CAMBIO (backend): mensaje de "Buscando…"/errores y avisos de tiendas que no respondieron -->
+      <p class="search-status hidden" id="searchStatus" role="status" aria-live="polite"></p>
+      <p class="search-notices hidden" id="searchNotices"></p>
+
+      <div class="product-grid" id="productGrid" aria-live="polite"></div>
+      <div class="empty-state hidden" id="emptyState">
+        <span class="empty-icon">⌕</span>
+        <h3>No encontramos productos</h3>
+        <p>Prueba con otro nombre o elige una categoría diferente.</p>
+        <button class="button button-secondary" id="clearSearch" type="button">Ver todos los productos</button>
+      </div>
+    </section>
+
+    <section class="content-section history-section hidden" id="historyView">
+      <div class="section-heading">
+        <div>
+          <span class="eyebrow">Tus búsquedas</span>
+          <h2>Tu historial</h2>
+          <p class="muted">Aquí aparecerán las búsquedas que hagas durante esta visita.</p>
+        </div>
+        <button class="button button-secondary" id="clearHistory" type="button">Limpiar historial</button>
+      </div>
+      <div class="history-list" id="historyList"></div>
+      <div class="empty-state" id="historyEmpty">
+        <span class="empty-icon">↺</span>
+        <h3>Tu historial está vacío</h3>
+        <p>Cuando busques productos, podrás encontrarlos aquí.</p>
+        <button class="button button-primary" id="backToSearch" type="button">Buscar productos</button>
+      </div>
+    </section>
+
+    <section class="detail-panel hidden" id="productDetail" aria-live="polite">
+      <button class="back-link" id="closeDetail" type="button">← Volver a resultados</button>
+      <div class="detail-layout">
+        <div class="detail-image" id="detailImage"></div>
+        <div class="detail-copy">
+          <span class="eyebrow">Detalle del producto</span>
+          <h2 id="detailName"></h2>
+          <p class="muted" id="detailDescription"></p>
+          <div class="detail-price" id="detailPrice"></div>
+          <p class="muted">Precios de demostración: se reemplazarán por datos reales al conectar el backend.</p>
+          <div class="store-list" id="storeList"></div>
+          <button class="button button-primary" id="saveProduct" type="button">♡ Guardar producto</button>
+          <span class="inline-message" id="saveMessage" role="status"></span>
+        </div>
+      </div>
+    </section>
+
+    <section class="bottom-banner">
+      <div class="banner-leaf">✳</div>
+      <div>
+        <h2>Comprar bien también es ahorrar.</h2>
+        <p>Tu próxima compra inteligente empieza con Picksy.</p>
+      </div>
+      <button class="button button-light" id="bannerSearch" type="button">Explorar productos <span>→</span></button>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <a class="brand brand-footer" href="index.html"><span class="brand-mark">✳</span><span>picksy</span></a>
+    <span>Compra con intención. Ahorra con Picksy.</span>
+    <span>© 2026 Picksy · Prototipo frontend</span>
+  </footer>
+
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+</body>
+
+</html>

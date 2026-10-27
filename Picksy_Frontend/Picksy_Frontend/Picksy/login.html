@@ -1,0 +1,124 @@
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Inicia sesión en Picksy y encuentra mejores precios.">
+  <title>Iniciar sesión | Picksy</title>
+  <link rel="stylesheet" href="css/styles.css">
+  <!-- CAMBIO (backend): api.js (conexión con el backend) debe cargarse ANTES de login.js -->
+  <script src="js/api.js" defer></script>
+  <script src="js/login.js" defer></script>
+</head>
+<body class="login-body">
+  <main class="login-layout">
+
+    <section class="login-brand-panel">
+      <a class="brand brand-on-dark" href="index.html">
+        <span class="brand-mark" aria-hidden="true">
+          <svg viewBox="0 0 48 48">
+            <path d="M39 7C20 7 8 15 8 29c0 7 5 12 12 12C34 41 40 24 39 7Z" fill="currentColor"/>
+            <path d="M10 39C17 28 23 22 33 15" fill="none" stroke="#F5F4D0" stroke-width="3" stroke-linecap="round"/>
+          </svg>
+        </span>
+        <span>picksy</span>
+      </a>
+
+      <div class="login-brand-copy">
+        <span class="eyebrow eyebrow-light">Compra inteligente</span>
+        <h1>Tu dinero.<br>Tu elección.<br><span>Tu mejor compra.</span></h1>
+        <p>Encuentra opciones, compara precios y ahorra en las cosas que te gustan.</p>
+      </div>
+
+      <div class="login-decoration" aria-hidden="true">
+        <div class="login-orbit"></div>
+        <div class="login-leaf">✦</div>
+        <div class="login-mini-card">
+          <span>Tu ahorro empieza aquí</span>
+          <strong>♡</strong>
+        </div>
+      </div>
+
+      <span class="panel-note">Pequeñas decisiones. Grandes ahorros.</span>
+    </section>
+
+    <section class="login-form-panel">
+      <div class="login-form-wrap">
+
+        <a class="back-link" href="index.html">← Volver al inicio</a>
+
+        <span class="eyebrow">Qué bueno tenerte aquí</span>
+        <h2>¡Hola de nuevo!</h2>
+        <p class="muted">Inicia sesión para continuar explorando.</p>
+
+        <form id="loginForm" class="auth-form" novalidate>
+          <label for="email">Correo electrónico</label>
+          <input
+            id="email"
+            name="email"
+            type="email"
+            placeholder="tunombre@correo.com"
+            autocomplete="email"
+            required
+          >
+          <small class="field-error" id="emailError"></small>
+
+          <div class="password-label">
+            <label for="password">Contraseña</label>
+            <a href="#" id="forgotPassword">¿La olvidaste?</a>
+          </div>
+
+          <div class="password-wrap">
+            <input
+              id="password"
+              name="password"
+              type="password"
+              placeholder="Ingresa tu contraseña"
+              autocomplete="current-password"
+              required
+              minlength="6"
+            >
+            <button
+              class="toggle-password"
+              id="togglePassword"
+              type="button"
+              aria-label="Mostrar contraseña"
+            >Ver</button>
+          </div>
+          <small class="field-error" id="passwordError"></small>
+
+          <label class="remember-check">
+            <input type="checkbox" id="remember">
+            <span>Recordar mi sesión en este dispositivo</span>
+          </label>
+
+          <button class="button button-primary button-wide" type="submit">
+            Iniciar sesión <span>→</span>
+          </button>
+
+          <p class="form-feedback" id="formFeedback" role="status" aria-live="polite"></p>
+        </form>
+
+        <div class="auth-divider">
+          <span>o continúa explorando</span>
+        </div>
+
+        <a class="button button-secondary button-wide" href="index.html">
+          Entrar como visitante
+        </a>
+
+        <p class="signup-note">
+          ¿Todavía no tienes cuenta?
+          <a href="registro.html">Crear una cuenta</a>
+        </p>
+
+        <p class="prototype-note">
+          Prototipo visual · La autenticación se conectará más adelante.
+        </p>
+      </div>
+    </section>
+
+  </main>
+</body>
+</html>

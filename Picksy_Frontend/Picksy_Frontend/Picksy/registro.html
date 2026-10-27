@@ -1,0 +1,159 @@
+
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Crea tu cuenta en Picksy y empieza a comprar de forma inteligente.">
+    <title>Crear cuenta | Picksy</title>
+
+    <link rel="stylesheet" href="css/styles.css">
+    <!-- CAMBIO (backend): api.js (conexión con el backend) debe cargarse ANTES de registro.js -->
+  <script src="js/api.js" defer></script>
+  <script src="js/registro.js" defer></script>
+</head>
+
+<body class="login-body">
+    <main class="login-layout">
+
+        <!-- Panel de marca -->
+        <section class="login-brand-panel">
+            <a class="brand brand-on-dark" href="index.html">
+                <span class="brand-mark" aria-hidden="true">
+                    <svg viewBox="0 0 48 48">
+                        <path d="M39 7C20 7 8 15 8 29c0 7 5 12 12 12C34 41 40 24 39 7Z"
+                            fill="currentColor" />
+                        <path d="M10 39C17 28 23 22 33 15" fill="none"
+                            stroke="#F5F4D0" stroke-width="3" stroke-linecap="round" />
+                    </svg>
+                </span>
+                <span>picksy</span>
+            </a>
+
+            <div class="login-brand-copy">
+                <span class="eyebrow eyebrow-light">Empieza a ahorrar</span>
+                <h1>Una cuenta.<br>Más opciones.<br><span>Mejores compras.</span></h1>
+                <p>
+                    Crea tu cuenta y prepárate para descubrir nuevas formas
+                    de comparar precios y comprar inteligentemente.
+                </p>
+            </div>
+
+            <div class="login-decoration" aria-hidden="true">
+                <div class="login-orbit"></div>
+                <div class="login-leaf">✦</div>
+                <div class="login-mini-card">
+                    <span>Tu próxima compra inteligente</span>
+                    <strong>♡</strong>
+                </div>
+            </div>
+
+            <span class="panel-note">Pequeñas decisiones. Grandes ahorros.</span>
+        </section>
+
+        <!-- Formulario de registro -->
+        <section class="login-form-panel">
+            <div class="login-form-wrap">
+
+                <a class="back-link" href="index.html">← Volver al inicio</a>
+
+                <span class="eyebrow">Únete a Picksy</span>
+                <h2>Crea tu cuenta</h2>
+                <p class="muted">Completa tus datos para comenzar.</p>
+
+                <form id="registerForm" class="auth-form register-form" novalidate>
+
+                    <label for="username">Nombre de usuario</label>
+                    <input
+                        id="username"
+                        name="username"
+                        type="text"
+                        placeholder="Elige un nombre de usuario"
+                        autocomplete="username"
+                        required
+                    >
+                    <small class="field-error" id="nameError"></small>
+
+                    <label for="registerEmail">Correo electrónico</label>
+                    <input
+                        id="registerEmail"
+                        name="email"
+                        type="email"
+                        placeholder="tunombre@correo.com"
+                        autocomplete="email"
+                        required
+                    >
+                    <small class="field-error" id="registerEmailError"></small>
+
+                    <label for="registerPassword" class="register-label-spaced">
+                        Contraseña
+                    </label>
+                    <input
+                        id="registerPassword"
+                        name="password"
+                        type="password"
+                        placeholder="Mínimo 8 caracteres"
+                        autocomplete="new-password"
+                        minlength="8"
+                        required
+                    >
+                    <small class="field-error" id="registerPasswordError"></small>
+
+                    <label for="confirmPassword" class="register-label-spaced">
+                        Confirmar contraseña
+                    </label>
+                    <input
+                        id="confirmPassword"
+                        name="confirmPassword"
+                        type="password"
+                        placeholder="Escribe la contraseña otra vez"
+                        autocomplete="new-password"
+                        minlength="8"
+                        required
+                    >
+                    <small class="field-error" id="confirmPasswordError"></small>
+
+                    <label class="terms-check" for="acceptTerms">
+                        <input
+                            id="acceptTerms"
+                            name="acceptTerms"
+                            type="checkbox"
+                            required
+                        >
+                        <span>
+                            Acepto los términos y condiciones y la política de privacidad.
+                        </span>
+                    </label>
+
+                    <p
+                        class="form-feedback register-feedback"
+                        id="registerFeedback"
+                        role="status"
+                        aria-live="polite"
+                    ></p>
+
+                    <button class="button button-primary button-wide" type="submit">
+                        Crear mi cuenta <span>→</span>
+                    </button>
+                </form>
+
+                <div class="auth-divider">
+                    <span>¿Ya tienes una cuenta?</span>
+                </div>
+
+                <a class="button button-secondary button-wide" href="login.html">
+                    Iniciar sesión
+                </a>
+
+                <p class="prototype-note">
+                    Prototipo visual · El registro real se conectará más adelante.
+                </p>
+
+            </div>
+        </section>
+
+    </main>
+</body>
+
+</html>
