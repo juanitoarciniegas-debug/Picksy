@@ -1,4 +1,5 @@
 from fastapi import FastAPI
+from fastapi.responses import Response
 from fastapi.middleware.cors import CORSMiddleware
 
 from auth import router as auth_router
@@ -25,3 +26,7 @@ app.include_router(historial_router)
 @app.get("/")
 def inicio():
     return {"mensaje": "Picksy funcionando"}
+
+@app.get("/favicon.ico", include_in_schema=False)
+def favicon():
+    return Response(status_code=204)
