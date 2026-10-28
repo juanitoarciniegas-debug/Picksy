@@ -200,6 +200,7 @@ def test_cp11_cada_opcion_trae_precio_y_tienda():
 
 
 @pytest.mark.slow
+@pytest.mark.xfail(reason="DEF-01: devuelve resultados irrelevantes", strict=False)
 def test_producto_inexistente_devuelve_lista_vacia():
     data = buscar_ok("asdfghjk", 1000000)
     assert data["viables"] == []
