@@ -1,4 +1,4 @@
-# Ubicación en el repositorio: .github/workflows/qa.yml  (en la raíz de SmartBudget)
+# Ubicación en el repositorio: .github/workflows/qa.yml  (en la raíz de Picksy)
 name: QA Picksy
 
 on:
@@ -57,6 +57,10 @@ jobs:
 
       - name: Instalar dependencias
         run: pip install -r requirements.txt pytest pytest-html
+
+      - name: Crear .env de prueba (solo en el servidor de CI)
+        run: |
+          printf 'DB_USER=postgres\nDB_PASSWORD=ci_password_no_secreta\nDB_HOST=localhost\nDB_PORT=5432\nDB_NAME=smartbudget\n' > .env
 
       - name: Preparar base de datos
         run: python preparar_base.py
