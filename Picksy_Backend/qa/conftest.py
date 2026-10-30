@@ -191,6 +191,8 @@ def _estado_requisito(rid):
         return "Posiblemente corregido", casos
     if any(c["categoria"] == "BLOQUEADO" for c in casos) or req.get("bloqueado_por"):
         return "Parcial (bloqueado por " + ", ".join(req.get("bloqueado_por", ["?"])) + ")", casos
+    if req.get("pendiente"):
+        return f"Parcial automático (falta: {req['pendiente']})", casos
     return "Verificado (automático)", casos
 
 

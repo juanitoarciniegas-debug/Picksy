@@ -17,3 +17,13 @@ def test_cada_requisito_tiene_titulo_y_prioridad():
 
 def test_el_ers_define_diez_tiendas():
     assert len(REQUISITOS["tiendas_ers"]) == 10
+
+
+CLAVES_PERMITIDAS = {"id", "titulo", "prioridad", "implementado", "bloqueado_por", "metodo_manual", "nota", "pendiente"}
+
+
+def test_ningun_requisito_tiene_claves_inesperadas():
+    """Atrapa errores de formato del YAML (por ejemplo, una coma sin comillas que parte el título en dos)."""
+    for r in REQUISITOS["requisitos"]:
+        sobran = set(r) - CLAVES_PERMITIDAS
+        assert not sobran, f"{r['id']} tiene claves inesperadas: {sobran}. Revisa comillas y comas en requisitos.yml"

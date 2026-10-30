@@ -10,6 +10,7 @@
 #   implementado  false = la v1 no tiene ese código (se verifica en el contrato)
 #   bloqueado_por ambigüedades del ERS (A-xx) que impiden definir el oráculo
 #   metodo_manual true = no se puede automatizar del todo (usabilidad, legal...)
+#   pendiente     parte del requisito que el bot NO verifica: el estado sale como 'Parcial', no 'Verificado'
 # =====================================================================
 version_ers: "1.0"
 
@@ -29,7 +30,7 @@ requisitos:
   - {id: RF-01, titulo: Registro con correo y contraseña, prioridad: Alta}
   - {id: RF-02, titulo: Inicio y cierre de sesión seguros, prioridad: Alta}
   - {id: RF-03, titulo: Sesión activa que expira de forma controlada, prioridad: Media}
-  - {id: RF-04, titulo: Precio, envío y disponibilidad de las 10 tiendas, prioridad: Alta}
+  - {id: RF-04, titulo: "Precio, envío y disponibilidad de las 10 tiendas", prioridad: Alta}
   - {id: RF-05, titulo: Caché con vigencia y fecha de actualización, prioridad: Alta}
   - {id: RF-06, titulo: Tienda caída - avisa y continúa con las demás, prioridad: Alta}
   - {id: RF-07, titulo: Entrada de producto y presupuesto máximo, prioridad: Alta}
@@ -37,7 +38,7 @@ requisitos:
   - {id: RF-09, titulo: Descarta opciones sobre el presupuesto, prioridad: Alta}
   - {id: RF-10, titulo: Ordena viables por total ascendente, prioridad: Alta}
   - {id: RF-11, titulo: Mejor opción y ahorro, prioridad: Alta, bloqueado_por: [A-02]}
-  - {id: RF-12, titulo: Enlace a la tienda original, prioridad: Alta}
+  - {id: RF-12, titulo: Enlace a la tienda original, prioridad: Alta, pendiente: "que el enlace abra la página correcta (muestreo manual CP-12.2)"}
   - id: RF-13
     titulo: Lista de productos con prioridad
     prioridad: Alta
@@ -61,10 +62,10 @@ requisitos:
     implementado: false
     nota: "Hay tablas carritos y carrito_items, pero ninguna ruta en v1."
   - {id: RNF-01, titulo: Búsqueda en menos de 5 s con caché, prioridad: "-"}
-  - {id: RNF-02, titulo: "Hash bcrypt, HTTPS y consultas parametrizadas", prioridad: "-"}
+  - {id: RNF-02, titulo: "Hash bcrypt, HTTPS y consultas parametrizadas", prioridad: "-", pendiente: "HTTPS (solo se verifica en un despliegue)"}
   - {id: RNF-03, titulo: Usabilidad - flujo en pocos pasos, prioridad: "-", metodo_manual: true}
   - {id: RNF-04, titulo: Compatibilidad con navegadores y responsivo, prioridad: "-", metodo_manual: true}
   - {id: RNF-05, titulo: La caída de una tienda no deja el sistema fuera de servicio, prioridad: "-"}
   - {id: RNF-06, titulo: Subsistemas independientes, prioridad: "-", metodo_manual: true}
   - {id: RNF-07, titulo: Ley 1581 y términos de uso de las tiendas, prioridad: "-", metodo_manual: true}
-  - {id: RNF-08, titulo: Fecha y hora de actualización en cada precio, prioridad: "-"}
+  - {id: RNF-08, titulo: Fecha y hora de actualización en cada precio, prioridad: "-", pendiente: "que la pantalla muestre la fecha (Playwright, fase 3)"}
