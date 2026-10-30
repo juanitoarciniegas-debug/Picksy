@@ -9,3 +9,4 @@ fecha_hora_utc,id_ejecucion,disparador,commit,rama,version_software,resultado,to
 2026-10-28 03:51:00,ci-run-4,push,79e1b45,main,v1,PASÓ,,,,,1,,1,DEF-01,sí,,,,
 2026-10-30 01:33:15,40986437957-1,push,7835c343b51c7311257405f05e3d003fc31b13eb,main,v1,PASÓ,137,123,0,10,4,0,4,"DEF-02,DEF-03,DEF-04,DEF-05",no,16.4,17,25,https://github.com/juanitoarciniegas-debug/Picksy/actions/runs/40986437957
 2026-10-30 01:53:41,40988418623-1,push,63cc9f0516b33567f21334bec94ea2279acd173a,main,v1,PASÓ,138,124,0,10,4,0,4,"DEF-02,DEF-03,DEF-04,DEF-05",no,18.7,17,25,https://github.com/juanitoarciniegas-debug/Picksy/actions/runs/40988418623
+2026-10-30 16:59:51,41094725067-1,schedule,63cc9f0516b33567f21334bec94ea2279acd173a,main,v1,FALLÓ,9,8,1,0,0,0,0,,sí,34.0,1,25,https://github.com/juanitoarciniegas-debug/Picksy/actions/runs/41094725067
