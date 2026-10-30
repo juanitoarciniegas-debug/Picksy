@@ -2,8 +2,9 @@ fecha_hora_utc,id_ejecucion,disparador,commit,rama,version_software,resultado,to
 2026-10-27 23:13:26,manual-1,manual_local,,local,v1,FALLÓ,29,28,1,0,0,0,1,DEF-01,sí,,,,
 2026-10-27 23:14:21,manual-2,manual_local,,local,v1,FALLÓ,29,28,1,0,0,0,1,DEF-01,sí,,,,
 2026-10-27 23:33:44,manual-3,manual_local,,local,v1,FALLÓ,29,28,1,0,0,0,1,DEF-01,sí,,,,
-2026-10-28 03:49:27,manual-4,manual_local,,local,v1,PASÓ,29,28,0,0,1,0,1,DEF-01,sí,,,,
 2026-10-27 23:48:00,ci-run-1,push,5288d04,main,v1,FALLÓ,,,,,,,,,sí,,,,
 2026-10-28 01:38:00,ci-run-2,push,2f67f77,main,v1,PASÓ,,,,,,,,,sí,,,,
 2026-10-28 03:27:00,ci-run-3,push,622d3b8,main,v1,PASÓ,,,,,,,,,sí,,,,
+2026-10-28 03:49:27,manual-4,manual_local,,local,v1,PASÓ,29,28,0,0,1,0,1,DEF-01,sí,,,,
 2026-10-28 03:51:00,ci-run-4,push,79e1b45,main,v1,PASÓ,,,,,1,,1,DEF-01,sí,,,,
+2026-10-30 01:33:15,40986437957-1,push,7835c343b51c7311257405f05e3d003fc31b13eb,main,v1,PASÓ,137,123,0,10,4,0,4,"DEF-02,DEF-03,DEF-04,DEF-05",no,16.4,17,25,https://github.com/juanitoarciniegas-debug/Picksy/actions/runs/40986437957

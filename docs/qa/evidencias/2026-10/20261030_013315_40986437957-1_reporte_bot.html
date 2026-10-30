@@ -1,0 +1,1094 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8"/>
+    <title id="head-title">reporte_bot.html</title>
+      <style type="text/css">body {
+  font-family: Helvetica, Arial, sans-serif;
+  font-size: 12px;
+  /* do not increase min-width as some may use split screens */
+  min-width: 800px;
+  color: #999;
+}
+
+h1 {
+  font-size: 24px;
+  color: black;
+}
+
+h2 {
+  font-size: 16px;
+  color: black;
+}
+
+p {
+  color: black;
+}
+
+a {
+  color: #999;
+}
+
+table {
+  border-collapse: collapse;
+}
+
+/******************************
+ * SUMMARY INFORMATION
+ ******************************/
+#environment td {
+  padding: 5px;
+  border: 1px solid #e6e6e6;
+  vertical-align: top;
+}
+#environment tr:nth-child(odd) {
+  background-color: #f6f6f6;
+}
+#environment ul {
+  margin: 0;
+  padding: 0 20px;
+}
+
+/******************************
+ * TEST RESULT COLORS
+ ******************************/
+span.passed,
+.passed .col-result {
+  color: green;
+}
+
+span.skipped,
+span.xfailed,
+span.rerun,
+.skipped .col-result,
+.xfailed .col-result,
+.rerun .col-result {
+  color: orange;
+}
+
+span.error,
+span.failed,
+span.xpassed,
+.error .col-result,
+.failed .col-result,
+.xpassed .col-result {
+  color: red;
+}
+
+.col-links__extra {
+  margin-right: 3px;
+}
+
+/******************************
+ * RESULTS TABLE
+ *
+ * 1. Table Layout
+ * 2. Extra
+ * 3. Sorting items
+ *
+ ******************************/
+/*------------------
+ * 1. Table Layout
+ *------------------*/
+#results-table {
+  border: 1px solid #e6e6e6;
+  color: #999;
+  font-size: 12px;
+  width: 100%;
+}
+#results-table th,
+#results-table td {
+  padding: 5px;
+  border: 1px solid #e6e6e6;
+  text-align: left;
+}
+#results-table th {
+  font-weight: bold;
+}
+
+/*------------------
+ * 2. Extra
+ *------------------*/
+.logwrapper {
+  max-height: 230px;
+  overflow-y: scroll;
+  background-color: #e6e6e6;
+}
+.logwrapper.expanded {
+  max-height: none;
+}
+.logwrapper.expanded .logexpander:after {
+  content: "collapse [-]";
+}
+.logwrapper .logexpander {
+  z-index: 1;
+  position: sticky;
+  top: 10px;
+  width: max-content;
+  border: 1px solid;
+  border-radius: 3px;
+  padding: 5px 7px;
+  margin: 10px 0 10px calc(100% - 80px);
+  cursor: pointer;
+  background-color: #e6e6e6;
+}
+.logwrapper .logexpander:after {
+  content: "expand [+]";
+}
+.logwrapper .logexpander:hover {
+  color: #000;
+  border-color: #000;
+}
+.logwrapper .log {
+  min-height: 40px;
+  position: relative;
+  top: -50px;
+  height: calc(100% + 50px);
+  border: 1px solid #e6e6e6;
+  color: black;
+  display: block;
+  font-family: "Courier New", Courier, monospace;
+  padding: 5px;
+  padding-right: 80px;
+  white-space: pre-wrap;
+}
+
+div.media {
+  border: 1px solid #e6e6e6;
+  float: right;
+  height: 240px;
+  margin: 0 5px;
+  overflow: hidden;
+  width: 320px;
+}
+
+.media-container {
+  display: grid;
+  grid-template-columns: 25px auto 25px;
+  align-items: center;
+  flex: 1 1;
+  overflow: hidden;
+  height: 200px;
+}
+
+.media-container--fullscreen {
+  grid-template-columns: 0px auto 0px;
+}
+
+.media-container__nav--right,
+.media-container__nav--left {
+  text-align: center;
+  cursor: pointer;
+}
+
+.media-container__viewport {
+  cursor: pointer;
+  text-align: center;
+  height: inherit;
+}
+.media-container__viewport img,
+.media-container__viewport video {
+  object-fit: cover;
+  width: 100%;
+  max-height: 100%;
+}
+
+.media__name,
+.media__counter {
+  display: flex;
+  flex-direction: row;
+  justify-content: space-around;
+  flex: 0 0 25px;
+  align-items: center;
+}
+
+.collapsible td:not(.col-links) {
+  cursor: pointer;
+}
+.collapsible td:not(.col-links):hover::after {
+  color: #bbb;
+  font-style: italic;
+  cursor: pointer;
+}
+
+.col-result {
+  width: 130px;
+}
+.col-result:hover::after {
+  content: " (hide details)";
+}
+
+.col-result.collapsed:hover::after {
+  content: " (show details)";
+}
+
+#environment-header h2:hover::after {
+  content: " (hide details)";
+  color: #bbb;
+  font-style: italic;
+  cursor: pointer;
+  font-size: 12px;
+}
+
+#environment-header.collapsed h2:hover::after {
+  content: " (show details)";
+  color: #bbb;
+  font-style: italic;
+  cursor: pointer;
+  font-size: 12px;
+}
+
+/*------------------
+ * 3. Sorting items
+ *------------------*/
+.sortable {
+  cursor: pointer;
+}
+.sortable.desc:after {
+  content: " ";
+  position: relative;
+  left: 5px;
+  bottom: -12.5px;
+  border: 10px solid #4caf50;
+  border-bottom: 0;
+  border-left-color: transparent;
+  border-right-color: transparent;
+}
+.sortable.asc:after {
+  content: " ";
+  position: relative;
+  left: 5px;
+  bottom: 12.5px;
+  border: 10px solid #4caf50;
+  border-top: 0;
+  border-left-color: transparent;
+  border-right-color: transparent;
+}
+
+.hidden, .summary__reload__button.hidden {
+  display: none;
+}
+
+.summary__data {
+  flex: 0 0 550px;
+}
+.summary__reload {
+  flex: 1 1;
+  display: flex;
+  justify-content: center;
+}
+.summary__reload__button {
+  flex: 0 0 300px;
+  display: flex;
+  color: white;
+  font-weight: bold;
+  background-color: #4caf50;
+  text-align: center;
+  justify-content: center;
+  align-items: center;
+  border-radius: 3px;
+  cursor: pointer;
+}
+.summary__reload__button:hover {
+  background-color: #46a049;
+}
+.summary__spacer {
+  flex: 0 0 550px;
+}
+
+.controls {
+  display: flex;
+  justify-content: space-between;
+}
+
+.filters,
+.collapse {
+  display: flex;
+  align-items: center;
+}
+.filters button,
+.collapse button {
+  color: #999;
+  border: none;
+  background: none;
+  cursor: pointer;
+  text-decoration: underline;
+}
+.filters button:hover,
+.collapse button:hover {
+  color: #ccc;
+}
+
+.filter__label {
+  margin-right: 10px;
+}
+
+      </style>
+    
+  </head>
+  <body>
+    <h1 id="title">reporte_bot.html</h1>
+    <p>Report generated on 30-Oct-2026 at 01:33:15 by <a href="https://pypi.python.org/pypi/pytest-html">pytest-html</a>
+        v4.2.0</p>
+    <div id="environment-header">
+      <h2>Environment</h2>
+    </div>
+    <table id="environment"></table>
+    <!-- TEMPLATES -->
+      <template id="template_environment_row">
+      <tr>
+        <td></td>
+        <td></td>
+      </tr>
+    </template>
+    <template id="template_results-table__body--empty">
+      <tbody class="results-table-row">
+        <tr id="not-found-message">
+          <td colspan="4">No results found. Check the filters.</td>
+        </tr>
+      </tbody>
+    </template>
+    <template id="template_results-table__tbody">
+      <tbody class="results-table-row">
+        <tr class="collapsible">
+        </tr>
+        <tr class="extras-row">
+          <td class="extra" colspan="4">
+            <div class="extraHTML"></div>
+            <div class="media">
+              <div class="media-container">
+                  <div class="media-container__nav--left">&lt;</div>
+                  <div class="media-container__viewport">
+                    <img src="" />
+                    <video controls>
+                      <source src="" type="video/mp4">
+                    </video>
+                  </div>
+                  <div class="media-container__nav--right">&gt;</div>
+                </div>
+                <div class="media__name"></div>
+                <div class="media__counter"></div>
+            </div>
+            <div class="logwrapper">
+              <div class="logexpander"></div>
+              <div class="log"></div>
+            </div>
+          </td>
+        </tr>
+      </tbody>
+    </template>
+    <!-- END TEMPLATES -->
+    <div class="summary">
+      <div class="summary__data">
+        <h2>Summary</h2>
+        <div class="additional-summary prefix">
+        </div>
+        <p class="run-count">127 tests took 00:00:16.</p>
+        <p class="filter">(Un)check the boxes to filter the results.</p>
+        <div class="summary__reload">
+          <div class="summary__reload__button hidden" onclick="location.reload()">
+            <div>There are still tests running. <br />Reload this page to get the latest results!</div>
+          </div>
+        </div>
+        <div class="summary__spacer"></div>
+        <div class="controls">
+          <div class="filters">
+            <input checked="true" class="filter" name="filter_checkbox" type="checkbox" data-test-result="failed" disabled>
+            <span class="failed">0 Failed,</span>
+            <input checked="true" class="filter" name="filter_checkbox" type="checkbox" data-test-result="passed" >
+            <span class="passed">123 Passed,</span>
+            <input checked="true" class="filter" name="filter_checkbox" type="checkbox" data-test-result="skipped" >
+            <span class="skipped">10 Skipped,</span>
+            <input checked="true" class="filter" name="filter_checkbox" type="checkbox" data-test-result="xfailed" >
+            <span class="xfailed">4 Expected failures,</span>
+            <input checked="true" class="filter" name="filter_checkbox" type="checkbox" data-test-result="xpassed" disabled>
+            <span class="xpassed">0 Unexpected passes,</span>
+            <input checked="true" class="filter" name="filter_checkbox" type="checkbox" data-test-result="error" disabled>
+            <span class="error">0 Errors,</span>
+            <input checked="true" class="filter" name="filter_checkbox" type="checkbox" data-test-result="rerun" disabled>
+            <span class="rerun">0 Reruns</span>
+            <input checked="true" class="filter" name="filter_checkbox" type="checkbox" data-test-result="retried" disabled>
+            <span class="retried">0 Retried,</span>
+          </div>
+          <div class="collapse">
+            <button id="show_all_details">Show all details</button>&nbsp;/&nbsp;<button id="hide_all_details">Hide all details</button>
+          </div>
+        </div>
+      </div>
+      <div class="additional-summary summary">
+      </div>
+      <div class="additional-summary postfix">
+      </div>
+    </div>
+    <table id="results-table">
+      <thead id="results-table-head">
+        <tr>
+          <th class="sortable" data-column-type="result">Result</th>
+          <th class="sortable" data-column-type="testId">Test</th>
+          <th class="sortable" data-column-type="duration">Duration</th>
+          <th>Links</th>
+        </tr>
+      </thead>
+    </table>
+  <footer>
+    <div id="data-container" data-jsonblob="{&#34;environment&#34;: {&#34;Python&#34;: &#34;3.14.9&#34;, &#34;Platform&#34;: &#34;Linux-7.0.0-1017-azure-x86_64-with-glibc2.39&#34;, &#34;Packages&#34;: {&#34;pytest&#34;: &#34;9.2.0&#34;, &#34;pluggy&#34;: &#34;1.7.0&#34;}, &#34;Plugins&#34;: {&#34;metadata&#34;: &#34;3.1.1&#34;, &#34;html&#34;: &#34;4.2.0&#34;, &#34;anyio&#34;: &#34;4.15.1&#34;}, &#34;CI&#34;: &#34;true&#34;, &#34;JAVA_HOME&#34;: &#34;/usr/lib/jvm/temurin-17-jdk-amd64&#34;}, &#34;tests&#34;: {&#34;qa/test_autenticacion.py::test_cp01_1_registro_valido_crea_cuenta&#34;: [{&#34;extras&#34;: [], &#34;result&#34;: &#34;Passed&#34;, &#34;testId&#34;: &#34;qa/test_autenticacion.py::test_cp01_1_registro_valido_crea_cuenta&#34;, &#34;duration&#34;: &#34;496 ms&#34;, &#34;resultsTableRow&#34;: [&#34;&lt;td class=\&#34;col-result\&#34;&gt;Passed&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-testId\&#34;&gt;qa/test_autenticacion.py::test_cp01_1_registro_valido_crea_cuenta&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-duration\&#34;&gt;496 ms&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-links\&#34;&gt;&lt;/td&gt;&#34;], &#34;log&#34;: &#34;No log output captured.&#34;}], &#34;qa/test_autenticacion.py::test_cp01_2_correo_repetido_se_rechaza_con_mensaje_claro&#34;: [{&#34;extras&#34;: [], &#34;result&#34;: &#34;Passed&#34;, &#34;testId&#34;: &#34;qa/test_autenticacion.py::test_cp01_2_correo_repetido_se_rechaza_con_mensaje_claro&#34;, &#34;duration&#34;: &#34;249 ms&#34;, &#34;resultsTableRow&#34;: [&#34;&lt;td class=\&#34;col-result\&#34;&gt;Passed&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-testId\&#34;&gt;qa/test_autenticacion.py::test_cp01_2_correo_repetido_se_rechaza_con_mensaje_claro&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-duration\&#34;&gt;249 ms&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-links\&#34;&gt;&lt;/td&gt;&#34;], &#34;log&#34;: &#34;No log output captured.&#34;}], &#34;qa/test_autenticacion.py::test_cp01_2b_correo_repetido_con_otras_mayusculas&#34;: [{&#34;extras&#34;: [], &#34;result&#34;: &#34;Passed&#34;, &#34;testId&#34;: &#34;qa/test_autenticacion.py::test_cp01_2b_correo_repetido_con_otras_mayusculas&#34;, &#34;duration&#34;: &#34;242 ms&#34;, &#34;resultsTableRow&#34;: [&#34;&lt;td class=\&#34;col-result\&#34;&gt;Passed&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-testId\&#34;&gt;qa/test_autenticacion.py::test_cp01_2b_correo_repetido_con_otras_mayusculas&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-duration\&#34;&gt;242 ms&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-links\&#34;&gt;&lt;/td&gt;&#34;], &#34;log&#34;: &#34;No log output captured.&#34;}], &#34;qa/test_autenticacion.py::test_cp01_3_correo_invalido[abc]&#34;: [{&#34;extras&#34;: [], &#34;result&#34;: &#34;Passed&#34;, &#34;testId&#34;: &#34;qa/test_autenticacion.py::test_cp01_3_correo_invalido[abc]&#34;, &#34;duration&#34;: &#34;3 ms&#34;, &#34;resultsTableRow&#34;: [&#34;&lt;td class=\&#34;col-result\&#34;&gt;Passed&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-testId\&#34;&gt;qa/test_autenticacion.py::test_cp01_3_correo_invalido[abc]&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-duration\&#34;&gt;3 ms&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-links\&#34;&gt;&lt;/td&gt;&#34;], &#34;log&#34;: &#34;No log output captured.&#34;}], &#34;qa/test_autenticacion.py::test_cp01_3_correo_invalido[abc@]&#34;: [{&#34;extras&#34;: [], &#34;result&#34;: &#34;Passed&#34;, &#34;testId&#34;: &#34;qa/test_autenticacion.py::test_cp01_3_correo_invalido[abc@]&#34;, &#34;duration&#34;: &#34;2 ms&#34;, &#34;resultsTableRow&#34;: [&#34;&lt;td class=\&#34;col-result\&#34;&gt;Passed&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-testId\&#34;&gt;qa/test_autenticacion.py::test_cp01_3_correo_invalido[abc@]&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-duration\&#34;&gt;2 ms&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-links\&#34;&gt;&lt;/td&gt;&#34;], &#34;log&#34;: &#34;No log output captured.&#34;}], &#34;qa/test_autenticacion.py::test_cp01_3_correo_invalido[@test.com]&#34;: [{&#34;extras&#34;: [], &#34;result&#34;: &#34;Passed&#34;, &#34;testId&#34;: &#34;qa/test_autenticacion.py::test_cp01_3_correo_invalido[@test.com]&#34;, &#34;duration&#34;: &#34;2 ms&#34;, &#34;resultsTableRow&#34;: [&#34;&lt;td class=\&#34;col-result\&#34;&gt;Passed&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-testId\&#34;&gt;qa/test_autenticacion.py::test_cp01_3_correo_invalido[@test.com]&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-duration\&#34;&gt;2 ms&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-links\&#34;&gt;&lt;/td&gt;&#34;], &#34;log&#34;: &#34;No log output captured.&#34;}], &#34;qa/test_autenticacion.py::test_cp01_3_correo_invalido[sin arroba.com]&#34;: [{&#34;extras&#34;: [], &#34;result&#34;: &#34;Passed&#34;, &#34;testId&#34;: &#34;qa/test_autenticacion.py::test_cp01_3_correo_invalido[sin arroba.com]&#34;, &#34;duration&#34;: &#34;2 ms&#34;, &#34;resultsTableRow&#34;: [&#34;&lt;td class=\&#34;col-result\&#34;&gt;Passed&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-testId\&#34;&gt;qa/test_autenticacion.py::test_cp01_3_correo_invalido[sin arroba.com]&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-duration\&#34;&gt;2 ms&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-links\&#34;&gt;&lt;/td&gt;&#34;], &#34;log&#34;: &#34;No log output captured.&#34;}], &#34;qa/test_autenticacion.py::test_cp01_3_correo_invalido[]&#34;: [{&#34;extras&#34;: [], &#34;result&#34;: &#34;Passed&#34;, &#34;testId&#34;: &#34;qa/test_autenticacion.py::test_cp01_3_correo_invalido[]&#34;, &#34;duration&#34;: &#34;2 ms&#34;, &#34;resultsTableRow&#34;: [&#34;&lt;td class=\&#34;col-result\&#34;&gt;Passed&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-testId\&#34;&gt;qa/test_autenticacion.py::test_cp01_3_correo_invalido[]&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-duration\&#34;&gt;2 ms&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-links\&#34;&gt;&lt;/td&gt;&#34;], &#34;log&#34;: &#34;No log output captured.&#34;}], &#34;qa/test_autenticacion.py::test_cp01_4_limites_de_la_contrasena[1234567-422]&#34;: [{&#34;extras&#34;: [], &#34;result&#34;: &#34;Passed&#34;, &#34;testId&#34;: &#34;qa/test_autenticacion.py::test_cp01_4_limites_de_la_contrasena[1234567-422]&#34;, &#34;duration&#34;: &#34;2 ms&#34;, &#34;resultsTableRow&#34;: [&#34;&lt;td class=\&#34;col-result\&#34;&gt;Passed&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-testId\&#34;&gt;qa/test_autenticacion.py::test_cp01_4_limites_de_la_contrasena[1234567-422]&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-duration\&#34;&gt;2 ms&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-links\&#34;&gt;&lt;/td&gt;&#34;], &#34;log&#34;: &#34;No log output captured.&#34;}], &#34;qa/test_autenticacion.py::test_cp01_4_limites_de_la_contrasena[12345678-201]&#34;: [{&#34;extras&#34;: [], &#34;result&#34;: &#34;Passed&#34;, &#34;testId&#34;: &#34;qa/test_autenticacion.py::test_cp01_4_limites_de_la_contrasena[12345678-201]&#34;, &#34;duration&#34;: &#34;239 ms&#34;, &#34;resultsTableRow&#34;: [&#34;&lt;td class=\&#34;col-result\&#34;&gt;Passed&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-testId\&#34;&gt;qa/test_autenticacion.py::test_cp01_4_limites_de_la_contrasena[12345678-201]&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-duration\&#34;&gt;239 ms&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-links\&#34;&gt;&lt;/td&gt;&#34;], &#34;log&#34;: &#34;No log output captured.&#34;}], &#34;qa/test_autenticacion.py::test_cp01_4_limites_de_la_contrasena[xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx-201]&#34;: [{&#34;extras&#34;: [], &#34;result&#34;: &#34;Passed&#34;, &#34;testId&#34;: &#34;qa/test_autenticacion.py::test_cp01_4_limites_de_la_contrasena[xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx-201]&#34;, &#34;duration&#34;: &#34;239 ms&#34;, &#34;resultsTableRow&#34;: [&#34;&lt;td class=\&#34;col-result\&#34;&gt;Passed&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-testId\&#34;&gt;qa/test_autenticacion.py::test_cp01_4_limites_de_la_contrasena[xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx-201]&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-duration\&#34;&gt;239 ms&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-links\&#34;&gt;&lt;/td&gt;&#34;], &#34;log&#34;: &#34;No log output captured.&#34;}], &#34;qa/test_autenticacion.py::test_cp01_4_limites_de_la_contrasena[xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx-422]&#34;: [{&#34;extras&#34;: [], &#34;result&#34;: &#34;Passed&#34;, &#34;testId&#34;: &#34;qa/test_autenticacion.py::test_cp01_4_limites_de_la_contrasena[xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx-422]&#34;, &#34;duration&#34;: &#34;3 ms&#34;, &#34;resultsTableRow&#34;: [&#34;&lt;td class=\&#34;col-result\&#34;&gt;Passed&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-testId\&#34;&gt;qa/test_autenticacion.py::test_cp01_4_limites_de_la_contrasena[xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx-422]&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-duration\&#34;&gt;3 ms&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-links\&#34;&gt;&lt;/td&gt;&#34;], &#34;log&#34;: &#34;No log output captured.&#34;}], &#34;qa/test_autenticacion.py::test_cp02_1_login_correcto_devuelve_token_con_expiracion&#34;: [{&#34;extras&#34;: [], &#34;result&#34;: &#34;Passed&#34;, &#34;testId&#34;: &#34;qa/test_autenticacion.py::test_cp02_1_login_correcto_devuelve_token_con_expiracion&#34;, &#34;duration&#34;: &#34;482 ms&#34;, &#34;resultsTableRow&#34;: [&#34;&lt;td class=\&#34;col-result\&#34;&gt;Passed&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-testId\&#34;&gt;qa/test_autenticacion.py::test_cp02_1_login_correcto_devuelve_token_con_expiracion&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-duration\&#34;&gt;482 ms&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-links\&#34;&gt;&lt;/td&gt;&#34;], &#34;log&#34;: &#34;No log output captured.&#34;}], &#34;qa/test_autenticacion.py::test_cp02_2_error_no_revela_que_dato_fallo&#34;: [{&#34;extras&#34;: [], &#34;result&#34;: &#34;Passed&#34;, &#34;testId&#34;: &#34;qa/test_autenticacion.py::test_cp02_2_error_no_revela_que_dato_fallo&#34;, &#34;duration&#34;: &#34;480 ms&#34;, &#34;resultsTableRow&#34;: [&#34;&lt;td class=\&#34;col-result\&#34;&gt;Passed&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-testId\&#34;&gt;qa/test_autenticacion.py::test_cp02_2_error_no_revela_que_dato_fallo&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-duration\&#34;&gt;480 ms&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-links\&#34;&gt;&lt;/td&gt;&#34;], &#34;log&#34;: &#34;No log output captured.&#34;}], &#34;qa/test_autenticacion.py::test_cp02_4_cerrar_sesion_invalida_el_token&#34;: [{&#34;extras&#34;: [], &#34;result&#34;: &#34;Passed&#34;, &#34;testId&#34;: &#34;qa/test_autenticacion.py::test_cp02_4_cerrar_sesion_invalida_el_token&#34;, &#34;duration&#34;: &#34;531 ms&#34;, &#34;resultsTableRow&#34;: [&#34;&lt;td class=\&#34;col-result\&#34;&gt;Passed&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-testId\&#34;&gt;qa/test_autenticacion.py::test_cp02_4_cerrar_sesion_invalida_el_token&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-duration\&#34;&gt;531 ms&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-links\&#34;&gt;&lt;/td&gt;&#34;], &#34;log&#34;: &#34;No log output captured.&#34;}], &#34;qa/test_autenticacion.py::test_cp02_5_rutas_privadas_sin_token_dan_401[/auth/me-get]&#34;: [{&#34;extras&#34;: [], &#34;result&#34;: &#34;Passed&#34;, &#34;testId&#34;: &#34;qa/test_autenticacion.py::test_cp02_5_rutas_privadas_sin_token_dan_401[/auth/me-get]&#34;, &#34;duration&#34;: &#34;3 ms&#34;, &#34;resultsTableRow&#34;: [&#34;&lt;td class=\&#34;col-result\&#34;&gt;Passed&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-testId\&#34;&gt;qa/test_autenticacion.py::test_cp02_5_rutas_privadas_sin_token_dan_401[/auth/me-get]&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-duration\&#34;&gt;3 ms&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-links\&#34;&gt;&lt;/td&gt;&#34;], &#34;log&#34;: &#34;No log output captured.&#34;}], &#34;qa/test_autenticacion.py::test_cp02_5_rutas_privadas_sin_token_dan_401[/auth/logout-post]&#34;: [{&#34;extras&#34;: [], &#34;result&#34;: &#34;Passed&#34;, &#34;testId&#34;: &#34;qa/test_autenticacion.py::test_cp02_5_rutas_privadas_sin_token_dan_401[/auth/logout-post]&#34;, &#34;duration&#34;: &#34;3 ms&#34;, &#34;resultsTableRow&#34;: [&#34;&lt;td class=\&#34;col-result\&#34;&gt;Passed&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-testId\&#34;&gt;qa/test_autenticacion.py::test_cp02_5_rutas_privadas_sin_token_dan_401[/auth/logout-post]&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-duration\&#34;&gt;3 ms&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-links\&#34;&gt;&lt;/td&gt;&#34;], &#34;log&#34;: &#34;No log output captured.&#34;}], &#34;qa/test_autenticacion.py::test_cp02_5_rutas_privadas_sin_token_dan_401[/historial-get]&#34;: [{&#34;extras&#34;: [], &#34;result&#34;: &#34;Passed&#34;, &#34;testId&#34;: &#34;qa/test_autenticacion.py::test_cp02_5_rutas_privadas_sin_token_dan_401[/historial-get]&#34;, &#34;duration&#34;: &#34;2 ms&#34;, &#34;resultsTableRow&#34;: [&#34;&lt;td class=\&#34;col-result\&#34;&gt;Passed&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-testId\&#34;&gt;qa/test_autenticacion.py::test_cp02_5_rutas_privadas_sin_token_dan_401[/historial-get]&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-duration\&#34;&gt;2 ms&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-links\&#34;&gt;&lt;/td&gt;&#34;], &#34;log&#34;: &#34;No log output captured.&#34;}], &#34;qa/test_autenticacion.py::test_cp02_5_rutas_privadas_sin_token_dan_401[/historial-delete]&#34;: [{&#34;extras&#34;: [], &#34;result&#34;: &#34;Passed&#34;, &#34;testId&#34;: &#34;qa/test_autenticacion.py::test_cp02_5_rutas_privadas_sin_token_dan_401[/historial-delete]&#34;, &#34;duration&#34;: &#34;3 ms&#34;, &#34;resultsTableRow&#34;: [&#34;&lt;td class=\&#34;col-result\&#34;&gt;Passed&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-testId\&#34;&gt;qa/test_autenticacion.py::test_cp02_5_rutas_privadas_sin_token_dan_401[/historial-delete]&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-duration\&#34;&gt;3 ms&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-links\&#34;&gt;&lt;/td&gt;&#34;], &#34;log&#34;: &#34;No log output captured.&#34;}], &#34;qa/test_autenticacion.py::test_cp02_5b_token_inventado_da_401&#34;: [{&#34;extras&#34;: [], &#34;result&#34;: &#34;Passed&#34;, &#34;testId&#34;: &#34;qa/test_autenticacion.py::test_cp02_5b_token_inventado_da_401&#34;, &#34;duration&#34;: &#34;4 ms&#34;, &#34;resultsTableRow&#34;: [&#34;&lt;td class=\&#34;col-result\&#34;&gt;Passed&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-testId\&#34;&gt;qa/test_autenticacion.py::test_cp02_5b_token_inventado_da_401&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-duration\&#34;&gt;4 ms&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-links\&#34;&gt;&lt;/td&gt;&#34;], &#34;log&#34;: &#34;No log output captured.&#34;}], &#34;qa/test_autenticacion.py::test_cp03_1_sesion_vigente_da_acceso&#34;: [{&#34;extras&#34;: [], &#34;result&#34;: &#34;Passed&#34;, &#34;testId&#34;: &#34;qa/test_autenticacion.py::test_cp03_1_sesion_vigente_da_acceso&#34;, &#34;duration&#34;: &#34;481 ms&#34;, &#34;resultsTableRow&#34;: [&#34;&lt;td class=\&#34;col-result\&#34;&gt;Passed&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-testId\&#34;&gt;qa/test_autenticacion.py::test_cp03_1_sesion_vigente_da_acceso&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-duration\&#34;&gt;481 ms&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-links\&#34;&gt;&lt;/td&gt;&#34;], &#34;log&#34;: &#34;No log output captured.&#34;}], &#34;qa/test_autenticacion.py::test_cp03_1b_la_sesion_dura_24_horas&#34;: [{&#34;extras&#34;: [], &#34;result&#34;: &#34;Passed&#34;, &#34;testId&#34;: &#34;qa/test_autenticacion.py::test_cp03_1b_la_sesion_dura_24_horas&#34;, &#34;duration&#34;: &#34;477 ms&#34;, &#34;resultsTableRow&#34;: [&#34;&lt;td class=\&#34;col-result\&#34;&gt;Passed&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-testId\&#34;&gt;qa/test_autenticacion.py::test_cp03_1b_la_sesion_dura_24_horas&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-duration\&#34;&gt;477 ms&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-links\&#34;&gt;&lt;/td&gt;&#34;], &#34;log&#34;: &#34;No log output captured.&#34;}], &#34;qa/test_autenticacion.py::test_cp03_2_sesion_vencida_se_rechaza_de_forma_controlada&#34;: [{&#34;extras&#34;: [], &#34;result&#34;: &#34;Passed&#34;, &#34;testId&#34;: &#34;qa/test_autenticacion.py::test_cp03_2_sesion_vencida_se_rechaza_de_forma_controlada&#34;, &#34;duration&#34;: &#34;488 ms&#34;, &#34;resultsTableRow&#34;: [&#34;&lt;td class=\&#34;col-result\&#34;&gt;Passed&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-testId\&#34;&gt;qa/test_autenticacion.py::test_cp03_2_sesion_vencida_se_rechaza_de_forma_controlada&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-duration\&#34;&gt;488 ms&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-links\&#34;&gt;&lt;/td&gt;&#34;], &#34;log&#34;: &#34;No log output captured.&#34;}], &#34;qa/test_autenticacion.py::test_rnf02_1_contrasena_guardada_como_hash_bcrypt&#34;: [{&#34;extras&#34;: [], &#34;result&#34;: &#34;Passed&#34;, &#34;testId&#34;: &#34;qa/test_autenticacion.py::test_rnf02_1_contrasena_guardada_como_hash_bcrypt&#34;, &#34;duration&#34;: &#34;245 ms&#34;, &#34;resultsTableRow&#34;: [&#34;&lt;td class=\&#34;col-result\&#34;&gt;Passed&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-testId\&#34;&gt;qa/test_autenticacion.py::test_rnf02_1_contrasena_guardada_como_hash_bcrypt&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-duration\&#34;&gt;245 ms&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-links\&#34;&gt;&lt;/td&gt;&#34;], &#34;log&#34;: &#34;No log output captured.&#34;}], &#34;qa/test_autenticacion.py::test_rnf02_1b_dos_usuarios_con_la_misma_clave_tienen_hash_distinto&#34;: [{&#34;extras&#34;: [], &#34;result&#34;: &#34;Passed&#34;, &#34;testId&#34;: &#34;qa/test_autenticacion.py::test_rnf02_1b_dos_usuarios_con_la_misma_clave_tienen_hash_distinto&#34;, &#34;duration&#34;: &#34;490 ms&#34;, &#34;resultsTableRow&#34;: [&#34;&lt;td class=\&#34;col-result\&#34;&gt;Passed&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-testId\&#34;&gt;qa/test_autenticacion.py::test_rnf02_1b_dos_usuarios_con_la_misma_clave_tienen_hash_distinto&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-duration\&#34;&gt;490 ms&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-links\&#34;&gt;&lt;/td&gt;&#34;], &#34;log&#34;: &#34;No log output captured.&#34;}], &#34;qa/test_autenticacion.py::test_rnf02_1c_las_respuestas_nunca_exponen_el_hash&#34;: [{&#34;extras&#34;: [], &#34;result&#34;: &#34;Passed&#34;, &#34;testId&#34;: &#34;qa/test_autenticacion.py::test_rnf02_1c_las_respuestas_nunca_exponen_el_hash&#34;, &#34;duration&#34;: &#34;735 ms&#34;, &#34;resultsTableRow&#34;: [&#34;&lt;td class=\&#34;col-result\&#34;&gt;Passed&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-testId\&#34;&gt;qa/test_autenticacion.py::test_rnf02_1c_las_respuestas_nunca_exponen_el_hash&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-duration\&#34;&gt;735 ms&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-links\&#34;&gt;&lt;/td&gt;&#34;], &#34;log&#34;: &#34;No log output captured.&#34;}], &#34;qa/test_busqueda_reglas.py::test_cp07_1_entradas_invalidas_dan_422_y_no_consultan_tiendas[tv-None]&#34;: [{&#34;extras&#34;: [], &#34;result&#34;: &#34;Passed&#34;, &#34;testId&#34;: &#34;qa/test_busqueda_reglas.py::test_cp07_1_entradas_invalidas_dan_422_y_no_consultan_tiendas[tv-None]&#34;, &#34;duration&#34;: &#34;3 ms&#34;, &#34;resultsTableRow&#34;: [&#34;&lt;td class=\&#34;col-result\&#34;&gt;Passed&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-testId\&#34;&gt;qa/test_busqueda_reglas.py::test_cp07_1_entradas_invalidas_dan_422_y_no_consultan_tiendas[tv-None]&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-duration\&#34;&gt;3 ms&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-links\&#34;&gt;&lt;/td&gt;&#34;], &#34;log&#34;: &#34;No log output captured.&#34;}], &#34;qa/test_busqueda_reglas.py::test_cp07_1_entradas_invalidas_dan_422_y_no_consultan_tiendas[None-500000]&#34;: [{&#34;extras&#34;: [], &#34;result&#34;: &#34;Passed&#34;, &#34;testId&#34;: &#34;qa/test_busqueda_reglas.py::test_cp07_1_entradas_invalidas_dan_422_y_no_consultan_tiendas[None-500000]&#34;, &#34;duration&#34;: &#34;3 ms&#34;, &#34;resultsTableRow&#34;: [&#34;&lt;td class=\&#34;col-result\&#34;&gt;Passed&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-testId\&#34;&gt;qa/test_busqueda_reglas.py::test_cp07_1_entradas_invalidas_dan_422_y_no_consultan_tiendas[None-500000]&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-duration\&#34;&gt;3 ms&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-links\&#34;&gt;&lt;/td&gt;&#34;], &#34;log&#34;: &#34;No log output captured.&#34;}], &#34;qa/test_busqueda_reglas.py::test_cp07_1_entradas_invalidas_dan_422_y_no_consultan_tiendas[-500000]&#34;: [{&#34;extras&#34;: [], &#34;result&#34;: &#34;Passed&#34;, &#34;testId&#34;: &#34;qa/test_busqueda_reglas.py::test_cp07_1_entradas_invalidas_dan_422_y_no_consultan_tiendas[-500000]&#34;, &#34;duration&#34;: &#34;3 ms&#34;, &#34;resultsTableRow&#34;: [&#34;&lt;td class=\&#34;col-result\&#34;&gt;Passed&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-testId\&#34;&gt;qa/test_busqueda_reglas.py::test_cp07_1_entradas_invalidas_dan_422_y_no_consultan_tiendas[-500000]&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-duration\&#34;&gt;3 ms&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-links\&#34;&gt;&lt;/td&gt;&#34;], &#34;log&#34;: &#34;No log output captured.&#34;}], &#34;qa/test_busqueda_reglas.py::test_cp07_1_entradas_invalidas_dan_422_y_no_consultan_tiendas[a-500000]&#34;: [{&#34;extras&#34;: [], &#34;result&#34;: &#34;Passed&#34;, &#34;testId&#34;: &#34;qa/test_busqueda_reglas.py::test_cp07_1_entradas_invalidas_dan_422_y_no_consultan_tiendas[a-500000]&#34;, &#34;duration&#34;: &#34;3 ms&#34;, &#34;resultsTableRow&#34;: [&#34;&lt;td class=\&#34;col-result\&#34;&gt;Passed&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-testId\&#34;&gt;qa/test_busqueda_reglas.py::test_cp07_1_entradas_invalidas_dan_422_y_no_consultan_tiendas[a-500000]&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-duration\&#34;&gt;3 ms&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-links\&#34;&gt;&lt;/td&gt;&#34;], &#34;log&#34;: &#34;No log output captured.&#34;}], &#34;qa/test_busqueda_reglas.py::test_cp07_1_entradas_invalidas_dan_422_y_no_consultan_tiendas[prod4-500000]&#34;: [{&#34;extras&#34;: [], &#34;result&#34;: &#34;Passed&#34;, &#34;testId&#34;: &#34;qa/test_busqueda_reglas.py::test_cp07_1_entradas_invalidas_dan_422_y_no_consultan_tiendas[prod4-500000]&#34;, &#34;duration&#34;: &#34;2 ms&#34;, &#34;resultsTableRow&#34;: [&#34;&lt;td class=\&#34;col-result\&#34;&gt;Passed&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-testId\&#34;&gt;qa/test_busqueda_reglas.py::test_cp07_1_entradas_invalidas_dan_422_y_no_consultan_tiendas[prod4-500000]&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-duration\&#34;&gt;2 ms&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-links\&#34;&gt;&lt;/td&gt;&#34;], &#34;log&#34;: &#34;No log output captured.&#34;}], &#34;qa/test_busqueda_reglas.py::test_cp07_1_entradas_invalidas_dan_422_y_no_consultan_tiendas[televisor-0]&#34;: [{&#34;extras&#34;: [], &#34;result&#34;: &#34;Passed&#34;, &#34;testId&#34;: &#34;qa/test_busqueda_reglas.py::test_cp07_1_entradas_invalidas_dan_422_y_no_consultan_tiendas[televisor-0]&#34;, &#34;duration&#34;: &#34;2 ms&#34;, &#34;resultsTableRow&#34;: [&#34;&lt;td class=\&#34;col-result\&#34;&gt;Passed&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-testId\&#34;&gt;qa/test_busqueda_reglas.py::test_cp07_1_entradas_invalidas_dan_422_y_no_consultan_tiendas[televisor-0]&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-duration\&#34;&gt;2 ms&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-links\&#34;&gt;&lt;/td&gt;&#34;], &#34;log&#34;: &#34;No log output captured.&#34;}], &#34;qa/test_busqueda_reglas.py::test_cp07_1_entradas_invalidas_dan_422_y_no_consultan_tiendas[televisor--1]&#34;: [{&#34;extras&#34;: [], &#34;result&#34;: &#34;Passed&#34;, &#34;testId&#34;: &#34;qa/test_busqueda_reglas.py::test_cp07_1_entradas_invalidas_dan_422_y_no_consultan_tiendas[televisor--1]&#34;, &#34;duration&#34;: &#34;3 ms&#34;, &#34;resultsTableRow&#34;: [&#34;&lt;td class=\&#34;col-result\&#34;&gt;Passed&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-testId\&#34;&gt;qa/test_busqueda_reglas.py::test_cp07_1_entradas_invalidas_dan_422_y_no_consultan_tiendas[televisor--1]&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-duration\&#34;&gt;3 ms&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-links\&#34;&gt;&lt;/td&gt;&#34;], &#34;log&#34;: &#34;No log output captured.&#34;}], &#34;qa/test_busqueda_reglas.py::test_cp07_1_entradas_invalidas_dan_422_y_no_consultan_tiendas[televisor--0.01]&#34;: [{&#34;extras&#34;: [], &#34;result&#34;: &#34;Passed&#34;, &#34;testId&#34;: &#34;qa/test_busqueda_reglas.py::test_cp07_1_entradas_invalidas_dan_422_y_no_consultan_tiendas[televisor--0.01]&#34;, &#34;duration&#34;: &#34;3 ms&#34;, &#34;resultsTableRow&#34;: [&#34;&lt;td class=\&#34;col-result\&#34;&gt;Passed&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-testId\&#34;&gt;qa/test_busqueda_reglas.py::test_cp07_1_entradas_invalidas_dan_422_y_no_consultan_tiendas[televisor--0.01]&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-duration\&#34;&gt;3 ms&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-links\&#34;&gt;&lt;/td&gt;&#34;], &#34;log&#34;: &#34;No log output captured.&#34;}], &#34;qa/test_busqueda_reglas.py::test_cp07_1_entradas_invalidas_dan_422_y_no_consultan_tiendas[televisor-abc]&#34;: [{&#34;extras&#34;: [], &#34;result&#34;: &#34;Passed&#34;, &#34;testId&#34;: &#34;qa/test_busqueda_reglas.py::test_cp07_1_entradas_invalidas_dan_422_y_no_consultan_tiendas[televisor-abc]&#34;, &#34;duration&#34;: &#34;3 ms&#34;, &#34;resultsTableRow&#34;: [&#34;&lt;td class=\&#34;col-result\&#34;&gt;Passed&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-testId\&#34;&gt;qa/test_busqueda_reglas.py::test_cp07_1_entradas_invalidas_dan_422_y_no_consultan_tiendas[televisor-abc]&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-duration\&#34;&gt;3 ms&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-links\&#34;&gt;&lt;/td&gt;&#34;], &#34;log&#34;: &#34;No log output captured.&#34;}], &#34;qa/test_busqueda_reglas.py::test_cp07_1_entradas_invalidas_dan_422_y_no_consultan_tiendas[televisor-]&#34;: [{&#34;extras&#34;: [], &#34;result&#34;: &#34;Passed&#34;, &#34;testId&#34;: &#34;qa/test_busqueda_reglas.py::test_cp07_1_entradas_invalidas_dan_422_y_no_consultan_tiendas[televisor-]&#34;, &#34;duration&#34;: &#34;3 ms&#34;, &#34;resultsTableRow&#34;: [&#34;&lt;td class=\&#34;col-result\&#34;&gt;Passed&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-testId\&#34;&gt;qa/test_busqueda_reglas.py::test_cp07_1_entradas_invalidas_dan_422_y_no_consultan_tiendas[televisor-]&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-duration\&#34;&gt;3 ms&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-links\&#34;&gt;&lt;/td&gt;&#34;], &#34;log&#34;: &#34;No log output captured.&#34;}], &#34;qa/test_busqueda_reglas.py::test_cp07_1_entradas_invalidas_dan_422_y_no_consultan_tiendas[televisor-nan]&#34;: [{&#34;extras&#34;: [], &#34;result&#34;: &#34;Passed&#34;, &#34;testId&#34;: &#34;qa/test_busqueda_reglas.py::test_cp07_1_entradas_invalidas_dan_422_y_no_consultan_tiendas[televisor-nan]&#34;, &#34;duration&#34;: &#34;3 ms&#34;, &#34;resultsTableRow&#34;: [&#34;&lt;td class=\&#34;col-result\&#34;&gt;Passed&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-testId\&#34;&gt;qa/test_busqueda_reglas.py::test_cp07_1_entradas_invalidas_dan_422_y_no_consultan_tiendas[televisor-nan]&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-duration\&#34;&gt;3 ms&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-links\&#34;&gt;&lt;/td&gt;&#34;], &#34;log&#34;: &#34;No log output captured.&#34;}], &#34;qa/test_busqueda_reglas.py::test_cp07_2_limites_validos_se_aceptan[tv-1]&#34;: [{&#34;extras&#34;: [], &#34;result&#34;: &#34;Passed&#34;, &#34;testId&#34;: &#34;qa/test_busqueda_reglas.py::test_cp07_2_limites_validos_se_aceptan[tv-1]&#34;, &#34;duration&#34;: &#34;25 ms&#34;, &#34;resultsTableRow&#34;: [&#34;&lt;td class=\&#34;col-result\&#34;&gt;Passed&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-testId\&#34;&gt;qa/test_busqueda_reglas.py::test_cp07_2_limites_validos_se_aceptan[tv-1]&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-duration\&#34;&gt;25 ms&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-links\&#34;&gt;&lt;/td&gt;&#34;], &#34;log&#34;: &#34;No log output captured.&#34;}], &#34;qa/test_busqueda_reglas.py::test_cp07_2_limites_validos_se_aceptan[xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx-1000]&#34;: [{&#34;extras&#34;: [], &#34;result&#34;: &#34;Passed&#34;, &#34;testId&#34;: &#34;qa/test_busqueda_reglas.py::test_cp07_2_limites_validos_se_aceptan[xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx-1000]&#34;, &#34;duration&#34;: &#34;14 ms&#34;, &#34;resultsTableRow&#34;: [&#34;&lt;td class=\&#34;col-result\&#34;&gt;Passed&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-testId\&#34;&gt;qa/test_busqueda_reglas.py::test_cp07_2_limites_validos_se_aceptan[xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx-1000]&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-duration\&#34;&gt;14 ms&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-links\&#34;&gt;&lt;/td&gt;&#34;], &#34;log&#34;: &#34;No log output captured.&#34;}], &#34;qa/test_busqueda_reglas.py::test_cp07_2_limites_validos_se_aceptan[televisor-0.01]&#34;: [{&#34;extras&#34;: [], &#34;result&#34;: &#34;Passed&#34;, &#34;testId&#34;: &#34;qa/test_busqueda_reglas.py::test_cp07_2_limites_validos_se_aceptan[televisor-0.01]&#34;, &#34;duration&#34;: &#34;12 ms&#34;, &#34;resultsTableRow&#34;: [&#34;&lt;td class=\&#34;col-result\&#34;&gt;Passed&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-testId\&#34;&gt;qa/test_busqueda_reglas.py::test_cp07_2_limites_validos_se_aceptan[televisor-0.01]&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-duration\&#34;&gt;12 ms&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-links\&#34;&gt;&lt;/td&gt;&#34;], &#34;log&#34;: &#34;No log output captured.&#34;}], &#34;qa/test_busqueda_reglas.py::test_cp07_3_producto_de_solo_espacios_se_rechaza&#34;: [{&#34;extras&#34;: [], &#34;result&#34;: &#34;XFailed&#34;, &#34;testId&#34;: &#34;qa/test_busqueda_reglas.py::test_cp07_3_producto_de_solo_espacios_se_rechaza&#34;, &#34;duration&#34;: &#34;13 ms&#34;, &#34;resultsTableRow&#34;: [&#34;&lt;td class=\&#34;col-result\&#34;&gt;XFailed&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-testId\&#34;&gt;qa/test_busqueda_reglas.py::test_cp07_3_producto_de_solo_espacios_se_rechaza&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-duration\&#34;&gt;13 ms&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-links\&#34;&gt;&lt;/td&gt;&#34;], &#34;log&#34;: &#34;client = &amp;lt;starlette.testclient.TestClient object at 0x7faf87b48c20&amp;gt;\ntiendas = &amp;lt;mocks.TiendasSimuladas object at 0x7faf87c57790&amp;gt;\n\n    @pytest.mark.req(&amp;quot;RF-07&amp;quot;)\n    @pytest.mark.xfail(strict=False, reason=(\n        &amp;quot;DEF-03: un producto de solo espacios pasa la validaci\u00f3n (min_length se mide antes de strip) &amp;quot;\n        &amp;quot;y la API consulta las tiendas con t\u00e9rmino vac\u00edo.&amp;quot;))\n    def test_cp07_3_producto_de_solo_espacios_se_rechaza(client, tiendas):\n        r = buscar(client, &amp;quot;   &amp;quot;, 500000)\n&amp;gt;       assert r.status_code == 422\nE       assert 200 == 422\nE        +  where 200 = &amp;lt;Response [200 OK]&amp;gt;.status_code\n\nqa/test_busqueda_reglas.py:47: AssertionError\n&#34;}], &#34;qa/test_busqueda_reglas.py::test_cp07_4_presupuesto_infinito_se_rechaza&#34;: [{&#34;extras&#34;: [], &#34;result&#34;: &#34;XFailed&#34;, &#34;testId&#34;: &#34;qa/test_busqueda_reglas.py::test_cp07_4_presupuesto_infinito_se_rechaza&#34;, &#34;duration&#34;: &#34;13 ms&#34;, &#34;resultsTableRow&#34;: [&#34;&lt;td class=\&#34;col-result\&#34;&gt;XFailed&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-testId\&#34;&gt;qa/test_busqueda_reglas.py::test_cp07_4_presupuesto_infinito_se_rechaza&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-duration\&#34;&gt;13 ms&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-links\&#34;&gt;&lt;/td&gt;&#34;], &#34;log&#34;: &#34;client = &amp;lt;starlette.testclient.TestClient object at 0x7faf87b48c20&amp;gt;\ntiendas = &amp;lt;mocks.TiendasSimuladas object at 0x7faf87c7aed0&amp;gt;\ntermino = &amp;#x27;qa 265f1b&amp;#x27;\n\n    @pytest.mark.req(&amp;quot;RF-07&amp;quot;)\n    @pytest.mark.xfail(strict=False, reason=(\n        &amp;quot;DEF-04: presupuesto &amp;#x27;inf&amp;#x27; provoca error 500 (la respuesta no se puede convertir a JSON); &amp;quot;\n        &amp;quot;deber\u00eda ser 422.&amp;quot;))\n    def test_cp07_4_presupuesto_infinito_se_rechaza(client, tiendas, termino):\n&amp;gt;       assert buscar(client, termino, &amp;quot;inf&amp;quot;).status_code == 422\nE       AssertionError: assert 500 == 422\nE        +  where 500 = &amp;lt;Response [500 Internal Server Error]&amp;gt;.status_code\nE        +    where &amp;lt;Response [500 Internal Server Error]&amp;gt; = buscar(&amp;lt;starlette.testclient.TestClient object at 0x7faf87b48c20&amp;gt;, &amp;#x27;qa 265f1b&amp;#x27;, &amp;#x27;inf&amp;#x27;)\n\nqa/test_busqueda_reglas.py:56: AssertionError\n&#34;}], &#34;qa/test_busqueda_reglas.py::test_cp04_1_cada_opcion_trae_precio_envio_y_tienda&#34;: [{&#34;extras&#34;: [], &#34;result&#34;: &#34;Passed&#34;, &#34;testId&#34;: &#34;qa/test_busqueda_reglas.py::test_cp04_1_cada_opcion_trae_precio_envio_y_tienda&#34;, &#34;duration&#34;: &#34;9 ms&#34;, &#34;resultsTableRow&#34;: [&#34;&lt;td class=\&#34;col-result\&#34;&gt;Passed&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-testId\&#34;&gt;qa/test_busqueda_reglas.py::test_cp04_1_cada_opcion_trae_precio_envio_y_tienda&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-duration\&#34;&gt;9 ms&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-links\&#34;&gt;&lt;/td&gt;&#34;], &#34;log&#34;: &#34;No log output captured.&#34;}], &#34;qa/test_busqueda_reglas.py::test_cp04_1b_solo_aparecen_las_tiendas_que_tienen_el_producto&#34;: [{&#34;extras&#34;: [], &#34;result&#34;: &#34;Passed&#34;, &#34;testId&#34;: &#34;qa/test_busqueda_reglas.py::test_cp04_1b_solo_aparecen_las_tiendas_que_tienen_el_producto&#34;, &#34;duration&#34;: &#34;13 ms&#34;, &#34;resultsTableRow&#34;: [&#34;&lt;td class=\&#34;col-result\&#34;&gt;Passed&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-testId\&#34;&gt;qa/test_busqueda_reglas.py::test_cp04_1b_solo_aparecen_las_tiendas_que_tienen_el_producto&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-duration\&#34;&gt;13 ms&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-links\&#34;&gt;&lt;/td&gt;&#34;], &#34;log&#34;: &#34;No log output captured.&#34;}], &#34;qa/test_busqueda_reglas.py::test_cp04_1c_filtro_por_tienda_solo_consulta_esa_tienda&#34;: [{&#34;extras&#34;: [], &#34;result&#34;: &#34;Passed&#34;, &#34;testId&#34;: &#34;qa/test_busqueda_reglas.py::test_cp04_1c_filtro_por_tienda_solo_consulta_esa_tienda&#34;, &#34;duration&#34;: &#34;6 ms&#34;, &#34;resultsTableRow&#34;: [&#34;&lt;td class=\&#34;col-result\&#34;&gt;Passed&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-testId\&#34;&gt;qa/test_busqueda_reglas.py::test_cp04_1c_filtro_por_tienda_solo_consulta_esa_tienda&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-duration\&#34;&gt;6 ms&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-links\&#34;&gt;&lt;/td&gt;&#34;], &#34;log&#34;: &#34;No log output captured.&#34;}], &#34;qa/test_busqueda_reglas.py::test_cp04_1d_producto_agotado_se_excluye_y_se_cuenta&#34;: [{&#34;extras&#34;: [], &#34;result&#34;: &#34;Passed&#34;, &#34;testId&#34;: &#34;qa/test_busqueda_reglas.py::test_cp04_1d_producto_agotado_se_excluye_y_se_cuenta&#34;, &#34;duration&#34;: &#34;17 ms&#34;, &#34;resultsTableRow&#34;: [&#34;&lt;td class=\&#34;col-result\&#34;&gt;Passed&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-testId\&#34;&gt;qa/test_busqueda_reglas.py::test_cp04_1d_producto_agotado_se_excluye_y_se_cuenta&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-duration\&#34;&gt;17 ms&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-links\&#34;&gt;&lt;/td&gt;&#34;], &#34;log&#34;: &#34;No log output captured.&#34;}], &#34;qa/test_busqueda_reglas.py::test_cp08_1_total_es_precio_mas_envio&#34;: [{&#34;extras&#34;: [], &#34;result&#34;: &#34;Passed&#34;, &#34;testId&#34;: &#34;qa/test_busqueda_reglas.py::test_cp08_1_total_es_precio_mas_envio&#34;, &#34;duration&#34;: &#34;14 ms&#34;, &#34;resultsTableRow&#34;: [&#34;&lt;td class=\&#34;col-result\&#34;&gt;Passed&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-testId\&#34;&gt;qa/test_busqueda_reglas.py::test_cp08_1_total_es_precio_mas_envio&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-duration\&#34;&gt;14 ms&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-links\&#34;&gt;&lt;/td&gt;&#34;], &#34;log&#34;: &#34;No log output captured.&#34;}], &#34;qa/test_busqueda_reglas.py::test_cp08_2_envio_gratis_total_igual_al_precio&#34;: [{&#34;extras&#34;: [], &#34;result&#34;: &#34;Passed&#34;, &#34;testId&#34;: &#34;qa/test_busqueda_reglas.py::test_cp08_2_envio_gratis_total_igual_al_precio&#34;, &#34;duration&#34;: &#34;13 ms&#34;, &#34;resultsTableRow&#34;: [&#34;&lt;td class=\&#34;col-result\&#34;&gt;Passed&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-testId\&#34;&gt;qa/test_busqueda_reglas.py::test_cp08_2_envio_gratis_total_igual_al_precio&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-duration\&#34;&gt;13 ms&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-links\&#34;&gt;&lt;/td&gt;&#34;], &#34;log&#34;: &#34;No log output captured.&#34;}], &#34;qa/test_busqueda_reglas.py::test_cp08_3_envio_desconocido_cuenta_como_cero_y_se_marca&#34;: [{&#34;extras&#34;: [], &#34;result&#34;: &#34;Passed&#34;, &#34;testId&#34;: &#34;qa/test_busqueda_reglas.py::test_cp08_3_envio_desconocido_cuenta_como_cero_y_se_marca&#34;, &#34;duration&#34;: &#34;15 ms&#34;, &#34;resultsTableRow&#34;: [&#34;&lt;td class=\&#34;col-result\&#34;&gt;Passed&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-testId\&#34;&gt;qa/test_busqueda_reglas.py::test_cp08_3_envio_desconocido_cuenta_como_cero_y_se_marca&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-duration\&#34;&gt;15 ms&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-links\&#34;&gt;&lt;/td&gt;&#34;], &#34;log&#34;: &#34;No log output captured.&#34;}], &#34;qa/test_busqueda_reglas.py::test_cp09_1_opcion_sobre_el_presupuesto_aparece_como_descartada&#34;: [{&#34;extras&#34;: [], &#34;result&#34;: &#34;Passed&#34;, &#34;testId&#34;: &#34;qa/test_busqueda_reglas.py::test_cp09_1_opcion_sobre_el_presupuesto_aparece_como_descartada&#34;, &#34;duration&#34;: &#34;24 ms&#34;, &#34;resultsTableRow&#34;: [&#34;&lt;td class=\&#34;col-result\&#34;&gt;Passed&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-testId\&#34;&gt;qa/test_busqueda_reglas.py::test_cp09_1_opcion_sobre_el_presupuesto_aparece_como_descartada&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-duration\&#34;&gt;24 ms&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-links\&#34;&gt;&lt;/td&gt;&#34;], &#34;log&#34;: &#34;No log output captured.&#34;}], &#34;qa/test_busqueda_reglas.py::test_cp09_2_total_exactamente_igual_al_presupuesto_es_viable&#34;: [{&#34;extras&#34;: [], &#34;result&#34;: &#34;Passed&#34;, &#34;testId&#34;: &#34;qa/test_busqueda_reglas.py::test_cp09_2_total_exactamente_igual_al_presupuesto_es_viable&#34;, &#34;duration&#34;: &#34;24 ms&#34;, &#34;resultsTableRow&#34;: [&#34;&lt;td class=\&#34;col-result\&#34;&gt;Passed&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-testId\&#34;&gt;qa/test_busqueda_reglas.py::test_cp09_2_total_exactamente_igual_al_presupuesto_es_viable&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-duration\&#34;&gt;24 ms&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-links\&#34;&gt;&lt;/td&gt;&#34;], &#34;log&#34;: &#34;No log output captured.&#34;}], &#34;qa/test_busqueda_reglas.py::test_cp09_3_total_un_peso_sobre_el_presupuesto_se_descarta&#34;: [{&#34;extras&#34;: [], &#34;result&#34;: &#34;Passed&#34;, &#34;testId&#34;: &#34;qa/test_busqueda_reglas.py::test_cp09_3_total_un_peso_sobre_el_presupuesto_se_descarta&#34;, &#34;duration&#34;: &#34;22 ms&#34;, &#34;resultsTableRow&#34;: [&#34;&lt;td class=\&#34;col-result\&#34;&gt;Passed&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-testId\&#34;&gt;qa/test_busqueda_reglas.py::test_cp09_3_total_un_peso_sobre_el_presupuesto_se_descarta&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-duration\&#34;&gt;22 ms&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-links\&#34;&gt;&lt;/td&gt;&#34;], &#34;log&#34;: &#34;No log output captured.&#34;}], &#34;qa/test_busqueda_reglas.py::test_cp09_3b_se_descarta_por_el_total_no_por_el_precio&#34;: [{&#34;extras&#34;: [], &#34;result&#34;: &#34;Passed&#34;, &#34;testId&#34;: &#34;qa/test_busqueda_reglas.py::test_cp09_3b_se_descarta_por_el_total_no_por_el_precio&#34;, &#34;duration&#34;: &#34;21 ms&#34;, &#34;resultsTableRow&#34;: [&#34;&lt;td class=\&#34;col-result\&#34;&gt;Passed&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-testId\&#34;&gt;qa/test_busqueda_reglas.py::test_cp09_3b_se_descarta_por_el_total_no_por_el_precio&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-duration\&#34;&gt;21 ms&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-links\&#34;&gt;&lt;/td&gt;&#34;], &#34;log&#34;: &#34;No log output captured.&#34;}], &#34;qa/test_busqueda_reglas.py::test_cp09_3c_viables_y_descartadas_son_conjuntos_disjuntos_y_completos&#34;: [{&#34;extras&#34;: [], &#34;result&#34;: &#34;Passed&#34;, &#34;testId&#34;: &#34;qa/test_busqueda_reglas.py::test_cp09_3c_viables_y_descartadas_son_conjuntos_disjuntos_y_completos&#34;, &#34;duration&#34;: &#34;21 ms&#34;, &#34;resultsTableRow&#34;: [&#34;&lt;td class=\&#34;col-result\&#34;&gt;Passed&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-testId\&#34;&gt;qa/test_busqueda_reglas.py::test_cp09_3c_viables_y_descartadas_son_conjuntos_disjuntos_y_completos&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-duration\&#34;&gt;21 ms&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-links\&#34;&gt;&lt;/td&gt;&#34;], &#34;log&#34;: &#34;No log output captured.&#34;}], &#34;qa/test_busqueda_reglas.py::test_cp09_4_todo_descartado_responde_200_con_listas_coherentes&#34;: [{&#34;extras&#34;: [], &#34;result&#34;: &#34;Passed&#34;, &#34;testId&#34;: &#34;qa/test_busqueda_reglas.py::test_cp09_4_todo_descartado_responde_200_con_listas_coherentes&#34;, &#34;duration&#34;: &#34;21 ms&#34;, &#34;resultsTableRow&#34;: [&#34;&lt;td class=\&#34;col-result\&#34;&gt;Passed&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-testId\&#34;&gt;qa/test_busqueda_reglas.py::test_cp09_4_todo_descartado_responde_200_con_listas_coherentes&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-duration\&#34;&gt;21 ms&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-links\&#34;&gt;&lt;/td&gt;&#34;], &#34;log&#34;: &#34;No log output captured.&#34;}], &#34;qa/test_busqueda_reglas.py::test_cp10_1_viables_ordenadas_de_menor_a_mayor_total&#34;: [{&#34;extras&#34;: [], &#34;result&#34;: &#34;Passed&#34;, &#34;testId&#34;: &#34;qa/test_busqueda_reglas.py::test_cp10_1_viables_ordenadas_de_menor_a_mayor_total&#34;, &#34;duration&#34;: &#34;14 ms&#34;, &#34;resultsTableRow&#34;: [&#34;&lt;td class=\&#34;col-result\&#34;&gt;Passed&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-testId\&#34;&gt;qa/test_busqueda_reglas.py::test_cp10_1_viables_ordenadas_de_menor_a_mayor_total&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-duration\&#34;&gt;14 ms&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-links\&#34;&gt;&lt;/td&gt;&#34;], &#34;log&#34;: &#34;No log output captured.&#34;}], &#34;qa/test_busqueda_reglas.py::test_cp10_1b_descartadas_tambien_ordenadas_ascendente&#34;: [{&#34;extras&#34;: [], &#34;result&#34;: &#34;Passed&#34;, &#34;testId&#34;: &#34;qa/test_busqueda_reglas.py::test_cp10_1b_descartadas_tambien_ordenadas_ascendente&#34;, &#34;duration&#34;: &#34;20 ms&#34;, &#34;resultsTableRow&#34;: [&#34;&lt;td class=\&#34;col-result\&#34;&gt;Passed&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-testId\&#34;&gt;qa/test_busqueda_reglas.py::test_cp10_1b_descartadas_tambien_ordenadas_ascendente&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-duration\&#34;&gt;20 ms&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-links\&#34;&gt;&lt;/td&gt;&#34;], &#34;log&#34;: &#34;No log output captured.&#34;}], &#34;qa/test_busqueda_reglas.py::test_cp10_2_empate_de_totales_da_siempre_el_mismo_orden&#34;: [{&#34;extras&#34;: [], &#34;result&#34;: &#34;Passed&#34;, &#34;testId&#34;: &#34;qa/test_busqueda_reglas.py::test_cp10_2_empate_de_totales_da_siempre_el_mismo_orden&#34;, &#34;duration&#34;: &#34;27 ms&#34;, &#34;resultsTableRow&#34;: [&#34;&lt;td class=\&#34;col-result\&#34;&gt;Passed&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-testId\&#34;&gt;qa/test_busqueda_reglas.py::test_cp10_2_empate_de_totales_da_siempre_el_mismo_orden&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-duration\&#34;&gt;27 ms&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-links\&#34;&gt;&lt;/td&gt;&#34;], &#34;log&#34;: &#34;No log output captured.&#34;}], &#34;qa/test_busqueda_reglas.py::test_cp11_1_mejor_opcion_es_la_primera_viable&#34;: [{&#34;extras&#34;: [], &#34;result&#34;: &#34;Passed&#34;, &#34;testId&#34;: &#34;qa/test_busqueda_reglas.py::test_cp11_1_mejor_opcion_es_la_primera_viable&#34;, &#34;duration&#34;: &#34;9 ms&#34;, &#34;resultsTableRow&#34;: [&#34;&lt;td class=\&#34;col-result\&#34;&gt;Passed&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-testId\&#34;&gt;qa/test_busqueda_reglas.py::test_cp11_1_mejor_opcion_es_la_primera_viable&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-duration\&#34;&gt;9 ms&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-links\&#34;&gt;&lt;/td&gt;&#34;], &#34;log&#34;: &#34;No log output captured.&#34;}], &#34;qa/test_busqueda_reglas.py::test_cp11_2_una_sola_opcion_viable_ahorro_cero&#34;: [{&#34;extras&#34;: [], &#34;result&#34;: &#34;Passed&#34;, &#34;testId&#34;: &#34;qa/test_busqueda_reglas.py::test_cp11_2_una_sola_opcion_viable_ahorro_cero&#34;, &#34;duration&#34;: &#34;13 ms&#34;, &#34;resultsTableRow&#34;: [&#34;&lt;td class=\&#34;col-result\&#34;&gt;Passed&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-testId\&#34;&gt;qa/test_busqueda_reglas.py::test_cp11_2_una_sola_opcion_viable_ahorro_cero&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-duration\&#34;&gt;13 ms&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-links\&#34;&gt;&lt;/td&gt;&#34;], &#34;log&#34;: &#34;No log output captured.&#34;}], &#34;qa/test_busqueda_reglas.py::test_cp11_3_ahorro_segun_la_propuesta_a02&#34;: [{&#34;extras&#34;: [], &#34;result&#34;: &#34;Skipped&#34;, &#34;testId&#34;: &#34;qa/test_busqueda_reglas.py::test_cp11_3_ahorro_segun_la_propuesta_a02::setup&#34;, &#34;duration&#34;: &#34;0 ms&#34;, &#34;resultsTableRow&#34;: [&#34;&lt;td class=\&#34;col-result\&#34;&gt;Skipped&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-testId\&#34;&gt;qa/test_busqueda_reglas.py::test_cp11_3_ahorro_segun_la_propuesta_a02::setup&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-duration\&#34;&gt;0 ms&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-links\&#34;&gt;&lt;/td&gt;&#34;], &#34;log&#34;: &#34;(&amp;#x27;/home/runner/work/Picksy/Picksy/Picksy_Backend/qa/test_busqueda_reglas.py&amp;#x27;, 218, &amp;quot;Skipped: BLOQUEADO A-02: el ERS no fija la regla del ahorro. El c\u00f3digo usa &amp;#x27;m\u00e1s cara VIABLE menos la mejor&amp;#x27;; la propuesta A-02 dice &amp;#x27;m\u00e1s cara CONSULTADA menos la mejor&amp;#x27;. Se activa cuando Requerimientos decida.&amp;quot;)\n&#34;}], &#34;qa/test_busqueda_reglas.py::test_cp12_1_cada_resultado_trae_enlace_https_a_la_tienda&#34;: [{&#34;extras&#34;: [], &#34;result&#34;: &#34;Passed&#34;, &#34;testId&#34;: &#34;qa/test_busqueda_reglas.py::test_cp12_1_cada_resultado_trae_enlace_https_a_la_tienda&#34;, &#34;duration&#34;: &#34;21 ms&#34;, &#34;resultsTableRow&#34;: [&#34;&lt;td class=\&#34;col-result\&#34;&gt;Passed&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-testId\&#34;&gt;qa/test_busqueda_reglas.py::test_cp12_1_cada_resultado_trae_enlace_https_a_la_tienda&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-duration\&#34;&gt;21 ms&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-links\&#34;&gt;&lt;/td&gt;&#34;], &#34;log&#34;: &#34;No log output captured.&#34;}], &#34;qa/test_busqueda_reglas.py::test_rnf08_1_cada_precio_indica_fecha_y_hora_de_actualizacion&#34;: [{&#34;extras&#34;: [], &#34;result&#34;: &#34;Passed&#34;, &#34;testId&#34;: &#34;qa/test_busqueda_reglas.py::test_rnf08_1_cada_precio_indica_fecha_y_hora_de_actualizacion&#34;, &#34;duration&#34;: &#34;21 ms&#34;, &#34;resultsTableRow&#34;: [&#34;&lt;td class=\&#34;col-result\&#34;&gt;Passed&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-testId\&#34;&gt;qa/test_busqueda_reglas.py::test_rnf08_1_cada_precio_indica_fecha_y_hora_de_actualizacion&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-duration\&#34;&gt;21 ms&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-links\&#34;&gt;&lt;/td&gt;&#34;], &#34;log&#34;: &#34;No log output captured.&#34;}], &#34;qa/test_cache_reglas.py::test_cp05_0_la_vigencia_configurada_es_de_24_horas&#34;: [{&#34;extras&#34;: [], &#34;result&#34;: &#34;Passed&#34;, &#34;testId&#34;: &#34;qa/test_cache_reglas.py::test_cp05_0_la_vigencia_configurada_es_de_24_horas&#34;, &#34;duration&#34;: &#34;0 ms&#34;, &#34;resultsTableRow&#34;: [&#34;&lt;td class=\&#34;col-result\&#34;&gt;Passed&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-testId\&#34;&gt;qa/test_cache_reglas.py::test_cp05_0_la_vigencia_configurada_es_de_24_horas&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-duration\&#34;&gt;0 ms&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-links\&#34;&gt;&lt;/td&gt;&#34;], &#34;log&#34;: &#34;No log output captured.&#34;}], &#34;qa/test_cache_reglas.py::test_cp05_1_busqueda_repetida_no_vuelve_a_consultar_las_tiendas&#34;: [{&#34;extras&#34;: [], &#34;result&#34;: &#34;Passed&#34;, &#34;testId&#34;: &#34;qa/test_cache_reglas.py::test_cp05_1_busqueda_repetida_no_vuelve_a_consultar_las_tiendas&#34;, &#34;duration&#34;: &#34;53 ms&#34;, &#34;resultsTableRow&#34;: [&#34;&lt;td class=\&#34;col-result\&#34;&gt;Passed&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-testId\&#34;&gt;qa/test_cache_reglas.py::test_cp05_1_busqueda_repetida_no_vuelve_a_consultar_las_tiendas&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-duration\&#34;&gt;53 ms&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-links\&#34;&gt;&lt;/td&gt;&#34;], &#34;log&#34;: &#34;No log output captured.&#34;}], &#34;qa/test_cache_reglas.py::test_cp05_1b_mayusculas_acentos_y_espacios_cuentan_como_la_misma_busqueda&#34;: [{&#34;extras&#34;: [], &#34;result&#34;: &#34;Passed&#34;, &#34;testId&#34;: &#34;qa/test_cache_reglas.py::test_cp05_1b_mayusculas_acentos_y_espacios_cuentan_como_la_misma_busqueda&#34;, &#34;duration&#34;: &#34;43 ms&#34;, &#34;resultsTableRow&#34;: [&#34;&lt;td class=\&#34;col-result\&#34;&gt;Passed&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-testId\&#34;&gt;qa/test_cache_reglas.py::test_cp05_1b_mayusculas_acentos_y_espacios_cuentan_como_la_misma_busqueda&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-duration\&#34;&gt;43 ms&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-links\&#34;&gt;&lt;/td&gt;&#34;], &#34;log&#34;: &#34;No log output captured.&#34;}], &#34;qa/test_cache_reglas.py::test_cp05_2_con_la_cache_vencida_vuelve_a_extraer&#34;: [{&#34;extras&#34;: [], &#34;result&#34;: &#34;Passed&#34;, &#34;testId&#34;: &#34;qa/test_cache_reglas.py::test_cp05_2_con_la_cache_vencida_vuelve_a_extraer&#34;, &#34;duration&#34;: &#34;63 ms&#34;, &#34;resultsTableRow&#34;: [&#34;&lt;td class=\&#34;col-result\&#34;&gt;Passed&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-testId\&#34;&gt;qa/test_cache_reglas.py::test_cp05_2_con_la_cache_vencida_vuelve_a_extraer&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-duration\&#34;&gt;63 ms&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-links\&#34;&gt;&lt;/td&gt;&#34;], &#34;log&#34;: &#34;No log output captured.&#34;}], &#34;qa/test_cache_reglas.py::test_cp05_2b_a_las_23_horas_la_cache_sigue_vigente&#34;: [{&#34;extras&#34;: [], &#34;result&#34;: &#34;Passed&#34;, &#34;testId&#34;: &#34;qa/test_cache_reglas.py::test_cp05_2b_a_las_23_horas_la_cache_sigue_vigente&#34;, &#34;duration&#34;: &#34;94 ms&#34;, &#34;resultsTableRow&#34;: [&#34;&lt;td class=\&#34;col-result\&#34;&gt;Passed&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-testId\&#34;&gt;qa/test_cache_reglas.py::test_cp05_2b_a_las_23_horas_la_cache_sigue_vigente&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-duration\&#34;&gt;94 ms&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-links\&#34;&gt;&lt;/td&gt;&#34;], &#34;log&#34;: &#34;No log output captured.&#34;}], &#34;qa/test_cache_reglas.py::test_cp05_3_la_fecha_de_actualizacion_es_la_de_la_extraccion_original&#34;: [{&#34;extras&#34;: [], &#34;result&#34;: &#34;Passed&#34;, &#34;testId&#34;: &#34;qa/test_cache_reglas.py::test_cp05_3_la_fecha_de_actualizacion_es_la_de_la_extraccion_original&#34;, &#34;duration&#34;: &#34;48 ms&#34;, &#34;resultsTableRow&#34;: [&#34;&lt;td class=\&#34;col-result\&#34;&gt;Passed&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-testId\&#34;&gt;qa/test_cache_reglas.py::test_cp05_3_la_fecha_de_actualizacion_es_la_de_la_extraccion_original&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-duration\&#34;&gt;48 ms&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-links\&#34;&gt;&lt;/td&gt;&#34;], &#34;log&#34;: &#34;No log output captured.&#34;}], &#34;qa/test_cache_reglas.py::test_cp05_4_actualizar_true_ignora_la_cache&#34;: [{&#34;extras&#34;: [], &#34;result&#34;: &#34;Passed&#34;, &#34;testId&#34;: &#34;qa/test_cache_reglas.py::test_cp05_4_actualizar_true_ignora_la_cache&#34;, &#34;duration&#34;: &#34;86 ms&#34;, &#34;resultsTableRow&#34;: [&#34;&lt;td class=\&#34;col-result\&#34;&gt;Passed&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-testId\&#34;&gt;qa/test_cache_reglas.py::test_cp05_4_actualizar_true_ignora_la_cache&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-duration\&#34;&gt;86 ms&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-links\&#34;&gt;&lt;/td&gt;&#34;], &#34;log&#34;: &#34;No log output captured.&#34;}], &#34;qa/test_cache_reglas.py::test_cp05_5_tiendas_sin_resultados_tampoco_se_vuelven_a_consultar&#34;: [{&#34;extras&#34;: [], &#34;result&#34;: &#34;XFailed&#34;, &#34;testId&#34;: &#34;qa/test_cache_reglas.py::test_cp05_5_tiendas_sin_resultados_tampoco_se_vuelven_a_consultar&#34;, &#34;duration&#34;: &#34;29 ms&#34;, &#34;resultsTableRow&#34;: [&#34;&lt;td class=\&#34;col-result\&#34;&gt;XFailed&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-testId\&#34;&gt;qa/test_cache_reglas.py::test_cp05_5_tiendas_sin_resultados_tampoco_se_vuelven_a_consultar&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-duration\&#34;&gt;29 ms&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-links\&#34;&gt;&lt;/td&gt;&#34;], &#34;log&#34;: &#34;client = &amp;lt;starlette.testclient.TestClient object at 0x7faf87b48c20&amp;gt;\ntiendas = &amp;lt;mocks.TiendasSimuladas object at 0x7faf84a1aac0&amp;gt;\ntermino = &amp;#x27;qa 414c9a&amp;#x27;\n\n    @pytest.mark.xfail(strict=False, reason=(\n        &amp;quot;DEF-05: las tiendas que NO devuelven resultados no se guardan en cach\u00e9 (cache.py solo guarda &amp;quot;\n        &amp;quot;&amp;#x27;si hubo resultados&amp;#x27;), as\u00ed que una b\u00fasqueda repetida las vuelve a consultar. Contradice el criterio &amp;quot;\n        &amp;quot;de aceptaci\u00f3n de RF-05 y multiplica el tr\u00e1fico hacia tiendas reales.&amp;quot;))\n    def test_cp05_5_tiendas_sin_resultados_tampoco_se_vuelven_a_consultar(client, tiendas, termino):\n        tiendas.poner(&amp;quot;\u00c9xito&amp;quot;, producto(&amp;quot;\u00c9xito&amp;quot;, &amp;quot;TV&amp;quot;, 300_000))      # las otras 8 tiendas no tienen el producto\n        buscar_ok(client, termino, PRESUPUESTO)\n        n = len(tiendas.llamadas)\n        buscar_ok(client, termino, PRESUPUESTO)\n&amp;gt;       assert len(tiendas.llamadas) == n, f&amp;quot;La repetici\u00f3n consult\u00f3 {len(tiendas.llamadas) - n} tiendas de nuevo&amp;quot;\nE       AssertionError: La repetici\u00f3n consult\u00f3 8 tiendas de nuevo\nE       assert 17 == 9\nE        +  where 17 = len([(&amp;#x27;\u00c9xito&amp;#x27;, &amp;#x27;qa 414c9a&amp;#x27;), (&amp;#x27;Alkosto&amp;#x27;, &amp;#x27;qa 414c9a&amp;#x27;), (&amp;#x27;Falabella&amp;#x27;, &amp;#x27;qa 414c9a&amp;#x27;), (&amp;#x27;Homecenter&amp;#x27;, &amp;#x27;qa 414c9a&amp;#x27;), (&amp;#x27;Ol\u00edmpica&amp;#x27;, &amp;#x27;qa 414c9a&amp;#x27;), (&amp;#x27;Farmatodo&amp;#x27;, &amp;#x27;qa 414c9a&amp;#x27;), ...])\nE        +    where [(&amp;#x27;\u00c9xito&amp;#x27;, &amp;#x27;qa 414c9a&amp;#x27;), (&amp;#x27;Alkosto&amp;#x27;, &amp;#x27;qa 414c9a&amp;#x27;), (&amp;#x27;Falabella&amp;#x27;, &amp;#x27;qa 414c9a&amp;#x27;), (&amp;#x27;Homecenter&amp;#x27;, &amp;#x27;qa 414c9a&amp;#x27;), (&amp;#x27;Ol\u00edmpica&amp;#x27;, &amp;#x27;qa 414c9a&amp;#x27;), (&amp;#x27;Farmatodo&amp;#x27;, &amp;#x27;qa 414c9a&amp;#x27;), ...] = &amp;lt;mocks.TiendasSimuladas object at 0x7faf84a1aac0&amp;gt;.llamadas\n\nqa/test_cache_reglas.py:92: AssertionError\n&#34;}], &#34;qa/test_contrato.py::test_el_contrato_de_la_api_no_cambio&#34;: [{&#34;extras&#34;: [], &#34;result&#34;: &#34;Passed&#34;, &#34;testId&#34;: &#34;qa/test_contrato.py::test_el_contrato_de_la_api_no_cambio&#34;, &#34;duration&#34;: &#34;8 ms&#34;, &#34;resultsTableRow&#34;: [&#34;&lt;td class=\&#34;col-result\&#34;&gt;Passed&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-testId\&#34;&gt;qa/test_contrato.py::test_el_contrato_de_la_api_no_cambio&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-duration\&#34;&gt;8 ms&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-links\&#34;&gt;&lt;/td&gt;&#34;], &#34;log&#34;: &#34;No log output captured.&#34;}], &#34;qa/test_historial.py::test_cp15_1_la_busqueda_con_sesion_queda_con_fecha_producto_presupuesto_y_resultado&#34;: [{&#34;extras&#34;: [], &#34;result&#34;: &#34;Passed&#34;, &#34;testId&#34;: &#34;qa/test_historial.py::test_cp15_1_la_busqueda_con_sesion_queda_con_fecha_producto_presupuesto_y_resultado&#34;, &#34;duration&#34;: &#34;537 ms&#34;, &#34;resultsTableRow&#34;: [&#34;&lt;td class=\&#34;col-result\&#34;&gt;Passed&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-testId\&#34;&gt;qa/test_historial.py::test_cp15_1_la_busqueda_con_sesion_queda_con_fecha_producto_presupuesto_y_resultado&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-duration\&#34;&gt;537 ms&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-links\&#34;&gt;&lt;/td&gt;&#34;], &#34;log&#34;: &#34;No log output captured.&#34;}], &#34;qa/test_historial.py::test_cp15_1b_lo_mas_reciente_aparece_primero&#34;: [{&#34;extras&#34;: [], &#34;result&#34;: &#34;Passed&#34;, &#34;testId&#34;: &#34;qa/test_historial.py::test_cp15_1b_lo_mas_reciente_aparece_primero&#34;, &#34;duration&#34;: &#34;514 ms&#34;, &#34;resultsTableRow&#34;: [&#34;&lt;td class=\&#34;col-result\&#34;&gt;Passed&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-testId\&#34;&gt;qa/test_historial.py::test_cp15_1b_lo_mas_reciente_aparece_primero&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-duration\&#34;&gt;514 ms&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-links\&#34;&gt;&lt;/td&gt;&#34;], &#34;log&#34;: &#34;No log output captured.&#34;}], &#34;qa/test_historial.py::test_cp15_2_sin_sesion_no_se_guarda_nada&#34;: [{&#34;extras&#34;: [], &#34;result&#34;: &#34;Passed&#34;, &#34;testId&#34;: &#34;qa/test_historial.py::test_cp15_2_sin_sesion_no_se_guarda_nada&#34;, &#34;duration&#34;: &#34;27 ms&#34;, &#34;resultsTableRow&#34;: [&#34;&lt;td class=\&#34;col-result\&#34;&gt;Passed&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-testId\&#34;&gt;qa/test_historial.py::test_cp15_2_sin_sesion_no_se_guarda_nada&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-duration\&#34;&gt;27 ms&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-links\&#34;&gt;&lt;/td&gt;&#34;], &#34;log&#34;: &#34;No log output captured.&#34;}], &#34;qa/test_historial.py::test_cp15_2b_token_invalido_busca_normal_y_no_guarda&#34;: [{&#34;extras&#34;: [], &#34;result&#34;: &#34;Passed&#34;, &#34;testId&#34;: &#34;qa/test_historial.py::test_cp15_2b_token_invalido_busca_normal_y_no_guarda&#34;, &#34;duration&#34;: &#34;24 ms&#34;, &#34;resultsTableRow&#34;: [&#34;&lt;td class=\&#34;col-result\&#34;&gt;Passed&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-testId\&#34;&gt;qa/test_historial.py::test_cp15_2b_token_invalido_busca_normal_y_no_guarda&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-duration\&#34;&gt;24 ms&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-links\&#34;&gt;&lt;/td&gt;&#34;], &#34;log&#34;: &#34;No log output captured.&#34;}], &#34;qa/test_historial.py::test_cp15_3_cada_usuario_ve_solo_su_historial&#34;: [{&#34;extras&#34;: [], &#34;result&#34;: &#34;Passed&#34;, &#34;testId&#34;: &#34;qa/test_historial.py::test_cp15_3_cada_usuario_ve_solo_su_historial&#34;, &#34;duration&#34;: &#34;00:00:01&#34;, &#34;resultsTableRow&#34;: [&#34;&lt;td class=\&#34;col-result\&#34;&gt;Passed&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-testId\&#34;&gt;qa/test_historial.py::test_cp15_3_cada_usuario_ve_solo_su_historial&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-duration\&#34;&gt;00:00:01&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-links\&#34;&gt;&lt;/td&gt;&#34;], &#34;log&#34;: &#34;No log output captured.&#34;}], &#34;qa/test_historial.py::test_cp15_3b_no_se_puede_borrar_el_historial_de_otro_usuario&#34;: [{&#34;extras&#34;: [], &#34;result&#34;: &#34;Passed&#34;, &#34;testId&#34;: &#34;qa/test_historial.py::test_cp15_3b_no_se_puede_borrar_el_historial_de_otro_usuario&#34;, &#34;duration&#34;: &#34;985 ms&#34;, &#34;resultsTableRow&#34;: [&#34;&lt;td class=\&#34;col-result\&#34;&gt;Passed&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-testId\&#34;&gt;qa/test_historial.py::test_cp15_3b_no_se_puede_borrar_el_historial_de_otro_usuario&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-duration\&#34;&gt;985 ms&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-links\&#34;&gt;&lt;/td&gt;&#34;], &#34;log&#34;: &#34;No log output captured.&#34;}], &#34;qa/test_historial.py::test_cp15_4_comportamiento_actual_misma_busqueda_en_un_minuto_se_guarda_una_vez&#34;: [{&#34;extras&#34;: [], &#34;result&#34;: &#34;Passed&#34;, &#34;testId&#34;: &#34;qa/test_historial.py::test_cp15_4_comportamiento_actual_misma_busqueda_en_un_minuto_se_guarda_una_vez&#34;, &#34;duration&#34;: &#34;530 ms&#34;, &#34;resultsTableRow&#34;: [&#34;&lt;td class=\&#34;col-result\&#34;&gt;Passed&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-testId\&#34;&gt;qa/test_historial.py::test_cp15_4_comportamiento_actual_misma_busqueda_en_un_minuto_se_guarda_una_vez&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-duration\&#34;&gt;530 ms&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-links\&#34;&gt;&lt;/td&gt;&#34;], &#34;log&#34;: &#34;No log output captured.&#34;}], &#34;qa/test_historial.py::test_cp15_5_borrar_una_y_borrar_todo&#34;: [{&#34;extras&#34;: [], &#34;result&#34;: &#34;Passed&#34;, &#34;testId&#34;: &#34;qa/test_historial.py::test_cp15_5_borrar_una_y_borrar_todo&#34;, &#34;duration&#34;: &#34;527 ms&#34;, &#34;resultsTableRow&#34;: [&#34;&lt;td class=\&#34;col-result\&#34;&gt;Passed&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-testId\&#34;&gt;qa/test_historial.py::test_cp15_5_borrar_una_y_borrar_todo&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-duration\&#34;&gt;527 ms&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-links\&#34;&gt;&lt;/td&gt;&#34;], &#34;log&#34;: &#34;No log output captured.&#34;}], &#34;qa/test_humo_conectores.py::test_humo_conector_responde_con_productos_validos[\\xc9xito]&#34;: [{&#34;extras&#34;: [], &#34;result&#34;: &#34;Skipped&#34;, &#34;testId&#34;: &#34;qa/test_humo_conectores.py::test_humo_conector_responde_con_productos_validos[\\xc9xito]::setup&#34;, &#34;duration&#34;: &#34;0 ms&#34;, &#34;resultsTableRow&#34;: [&#34;&lt;td class=\&#34;col-result\&#34;&gt;Skipped&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-testId\&#34;&gt;qa/test_humo_conectores.py::test_humo_conector_responde_con_productos_validos[\\xc9xito]::setup&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-duration\&#34;&gt;0 ms&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-links\&#34;&gt;&lt;/td&gt;&#34;], &#34;log&#34;: &#34;(&amp;#x27;/home/runner/work/Picksy/Picksy/Picksy_Backend/qa/test_humo_conectores.py&amp;#x27;, 25, &amp;#x27;Skipped: OMITIDA: consulta tiendas reales; solo corre con QA_TIENDAS_REALES=1&amp;#x27;)\n&#34;}], &#34;qa/test_humo_conectores.py::test_humo_conector_responde_con_productos_validos[Ol\\xedmpica]&#34;: [{&#34;extras&#34;: [], &#34;result&#34;: &#34;Skipped&#34;, &#34;testId&#34;: &#34;qa/test_humo_conectores.py::test_humo_conector_responde_con_productos_validos[Ol\\xedmpica]::setup&#34;, &#34;duration&#34;: &#34;0 ms&#34;, &#34;resultsTableRow&#34;: [&#34;&lt;td class=\&#34;col-result\&#34;&gt;Skipped&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-testId\&#34;&gt;qa/test_humo_conectores.py::test_humo_conector_responde_con_productos_validos[Ol\\xedmpica]::setup&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-duration\&#34;&gt;0 ms&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-links\&#34;&gt;&lt;/td&gt;&#34;], &#34;log&#34;: &#34;(&amp;#x27;/home/runner/work/Picksy/Picksy/Picksy_Backend/qa/test_humo_conectores.py&amp;#x27;, 25, &amp;#x27;Skipped: OMITIDA: consulta tiendas reales; solo corre con QA_TIENDAS_REALES=1&amp;#x27;)\n&#34;}], &#34;qa/test_humo_conectores.py::test_humo_conector_responde_con_productos_validos[Homecenter]&#34;: [{&#34;extras&#34;: [], &#34;result&#34;: &#34;Skipped&#34;, &#34;testId&#34;: &#34;qa/test_humo_conectores.py::test_humo_conector_responde_con_productos_validos[Homecenter]::setup&#34;, &#34;duration&#34;: &#34;0 ms&#34;, &#34;resultsTableRow&#34;: [&#34;&lt;td class=\&#34;col-result\&#34;&gt;Skipped&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-testId\&#34;&gt;qa/test_humo_conectores.py::test_humo_conector_responde_con_productos_validos[Homecenter]::setup&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-duration\&#34;&gt;0 ms&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-links\&#34;&gt;&lt;/td&gt;&#34;], &#34;log&#34;: &#34;(&amp;#x27;/home/runner/work/Picksy/Picksy/Picksy_Backend/qa/test_humo_conectores.py&amp;#x27;, 25, &amp;#x27;Skipped: OMITIDA: consulta tiendas reales; solo corre con QA_TIENDAS_REALES=1&amp;#x27;)\n&#34;}], &#34;qa/test_humo_conectores.py::test_humo_conector_responde_con_productos_validos[Falabella]&#34;: [{&#34;extras&#34;: [], &#34;result&#34;: &#34;Skipped&#34;, &#34;testId&#34;: &#34;qa/test_humo_conectores.py::test_humo_conector_responde_con_productos_validos[Falabella]::setup&#34;, &#34;duration&#34;: &#34;0 ms&#34;, &#34;resultsTableRow&#34;: [&#34;&lt;td class=\&#34;col-result\&#34;&gt;Skipped&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-testId\&#34;&gt;qa/test_humo_conectores.py::test_humo_conector_responde_con_productos_validos[Falabella]::setup&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-duration\&#34;&gt;0 ms&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-links\&#34;&gt;&lt;/td&gt;&#34;], &#34;log&#34;: &#34;(&amp;#x27;/home/runner/work/Picksy/Picksy/Picksy_Backend/qa/test_humo_conectores.py&amp;#x27;, 25, &amp;#x27;Skipped: OMITIDA: consulta tiendas reales; solo corre con QA_TIENDAS_REALES=1&amp;#x27;)\n&#34;}], &#34;qa/test_humo_conectores.py::test_humo_conector_responde_con_productos_validos[Alkosto]&#34;: [{&#34;extras&#34;: [], &#34;result&#34;: &#34;Skipped&#34;, &#34;testId&#34;: &#34;qa/test_humo_conectores.py::test_humo_conector_responde_con_productos_validos[Alkosto]::setup&#34;, &#34;duration&#34;: &#34;0 ms&#34;, &#34;resultsTableRow&#34;: [&#34;&lt;td class=\&#34;col-result\&#34;&gt;Skipped&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-testId\&#34;&gt;qa/test_humo_conectores.py::test_humo_conector_responde_con_productos_validos[Alkosto]::setup&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-duration\&#34;&gt;0 ms&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-links\&#34;&gt;&lt;/td&gt;&#34;], &#34;log&#34;: &#34;(&amp;#x27;/home/runner/work/Picksy/Picksy/Picksy_Backend/qa/test_humo_conectores.py&amp;#x27;, 25, &amp;#x27;Skipped: OMITIDA: consulta tiendas reales; solo corre con QA_TIENDAS_REALES=1&amp;#x27;)\n&#34;}], &#34;qa/test_humo_conectores.py::test_humo_conector_responde_con_productos_validos[Ktronix]&#34;: [{&#34;extras&#34;: [], &#34;result&#34;: &#34;Skipped&#34;, &#34;testId&#34;: &#34;qa/test_humo_conectores.py::test_humo_conector_responde_con_productos_validos[Ktronix]::setup&#34;, &#34;duration&#34;: &#34;0 ms&#34;, &#34;resultsTableRow&#34;: [&#34;&lt;td class=\&#34;col-result\&#34;&gt;Skipped&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-testId\&#34;&gt;qa/test_humo_conectores.py::test_humo_conector_responde_con_productos_validos[Ktronix]::setup&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-duration\&#34;&gt;0 ms&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-links\&#34;&gt;&lt;/td&gt;&#34;], &#34;log&#34;: &#34;(&amp;#x27;/home/runner/work/Picksy/Picksy/Picksy_Backend/qa/test_humo_conectores.py&amp;#x27;, 25, &amp;#x27;Skipped: OMITIDA: consulta tiendas reales; solo corre con QA_TIENDAS_REALES=1&amp;#x27;)\n&#34;}], &#34;qa/test_humo_conectores.py::test_humo_conector_responde_con_productos_validos[Alkomprar]&#34;: [{&#34;extras&#34;: [], &#34;result&#34;: &#34;Skipped&#34;, &#34;testId&#34;: &#34;qa/test_humo_conectores.py::test_humo_conector_responde_con_productos_validos[Alkomprar]::setup&#34;, &#34;duration&#34;: &#34;0 ms&#34;, &#34;resultsTableRow&#34;: [&#34;&lt;td class=\&#34;col-result\&#34;&gt;Skipped&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-testId\&#34;&gt;qa/test_humo_conectores.py::test_humo_conector_responde_con_productos_validos[Alkomprar]::setup&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-duration\&#34;&gt;0 ms&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-links\&#34;&gt;&lt;/td&gt;&#34;], &#34;log&#34;: &#34;(&amp;#x27;/home/runner/work/Picksy/Picksy/Picksy_Backend/qa/test_humo_conectores.py&amp;#x27;, 25, &amp;#x27;Skipped: OMITIDA: consulta tiendas reales; solo corre con QA_TIENDAS_REALES=1&amp;#x27;)\n&#34;}], &#34;qa/test_humo_conectores.py::test_humo_conector_responde_con_productos_validos[Buscalibre]&#34;: [{&#34;extras&#34;: [], &#34;result&#34;: &#34;Skipped&#34;, &#34;testId&#34;: &#34;qa/test_humo_conectores.py::test_humo_conector_responde_con_productos_validos[Buscalibre]::setup&#34;, &#34;duration&#34;: &#34;0 ms&#34;, &#34;resultsTableRow&#34;: [&#34;&lt;td class=\&#34;col-result\&#34;&gt;Skipped&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-testId\&#34;&gt;qa/test_humo_conectores.py::test_humo_conector_responde_con_productos_validos[Buscalibre]::setup&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-duration\&#34;&gt;0 ms&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-links\&#34;&gt;&lt;/td&gt;&#34;], &#34;log&#34;: &#34;(&amp;#x27;/home/runner/work/Picksy/Picksy/Picksy_Backend/qa/test_humo_conectores.py&amp;#x27;, 25, &amp;#x27;Skipped: OMITIDA: consulta tiendas reales; solo corre con QA_TIENDAS_REALES=1&amp;#x27;)\n&#34;}], &#34;qa/test_humo_conectores.py::test_humo_conector_responde_con_productos_validos[Farmatodo]&#34;: [{&#34;extras&#34;: [], &#34;result&#34;: &#34;Skipped&#34;, &#34;testId&#34;: &#34;qa/test_humo_conectores.py::test_humo_conector_responde_con_productos_validos[Farmatodo]::setup&#34;, &#34;duration&#34;: &#34;0 ms&#34;, &#34;resultsTableRow&#34;: [&#34;&lt;td class=\&#34;col-result\&#34;&gt;Skipped&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-testId\&#34;&gt;qa/test_humo_conectores.py::test_humo_conector_responde_con_productos_validos[Farmatodo]::setup&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-duration\&#34;&gt;0 ms&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-links\&#34;&gt;&lt;/td&gt;&#34;], &#34;log&#34;: &#34;(&amp;#x27;/home/runner/work/Picksy/Picksy/Picksy_Backend/qa/test_humo_conectores.py&amp;#x27;, 25, &amp;#x27;Skipped: OMITIDA: consulta tiendas reales; solo corre con QA_TIENDAS_REALES=1&amp;#x27;)\n&#34;}], &#34;qa/test_oraculos.py::test_ejemplo_calculado_a_mano&#34;: [{&#34;extras&#34;: [], &#34;result&#34;: &#34;Passed&#34;, &#34;testId&#34;: &#34;qa/test_oraculos.py::test_ejemplo_calculado_a_mano&#34;, &#34;duration&#34;: &#34;0 ms&#34;, &#34;resultsTableRow&#34;: [&#34;&lt;td class=\&#34;col-result\&#34;&gt;Passed&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-testId\&#34;&gt;qa/test_oraculos.py::test_ejemplo_calculado_a_mano&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-duration\&#34;&gt;0 ms&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-links\&#34;&gt;&lt;/td&gt;&#34;], &#34;log&#34;: &#34;No log output captured.&#34;}], &#34;qa/test_oraculos.py::test_ninguno_cabe&#34;: [{&#34;extras&#34;: [], &#34;result&#34;: &#34;Passed&#34;, &#34;testId&#34;: &#34;qa/test_oraculos.py::test_ninguno_cabe&#34;, &#34;duration&#34;: &#34;0 ms&#34;, &#34;resultsTableRow&#34;: [&#34;&lt;td class=\&#34;col-result\&#34;&gt;Passed&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-testId\&#34;&gt;qa/test_oraculos.py::test_ninguno_cabe&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-duration\&#34;&gt;0 ms&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-links\&#34;&gt;&lt;/td&gt;&#34;], &#34;log&#34;: &#34;No log output captured.&#34;}], &#34;qa/test_oraculos.py::test_presupuesto_exacto_a_la_suma&#34;: [{&#34;extras&#34;: [], &#34;result&#34;: &#34;Passed&#34;, &#34;testId&#34;: &#34;qa/test_oraculos.py::test_presupuesto_exacto_a_la_suma&#34;, &#34;duration&#34;: &#34;0 ms&#34;, &#34;resultsTableRow&#34;: [&#34;&lt;td class=\&#34;col-result\&#34;&gt;Passed&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-testId\&#34;&gt;qa/test_oraculos.py::test_presupuesto_exacto_a_la_suma&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-duration\&#34;&gt;0 ms&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-links\&#34;&gt;&lt;/td&gt;&#34;], &#34;log&#34;: &#34;No log output captured.&#34;}], &#34;qa/test_oraculos.py::test_lista_vacia&#34;: [{&#34;extras&#34;: [], &#34;result&#34;: &#34;Passed&#34;, &#34;testId&#34;: &#34;qa/test_oraculos.py::test_lista_vacia&#34;, &#34;duration&#34;: &#34;0 ms&#34;, &#34;resultsTableRow&#34;: [&#34;&lt;td class=\&#34;col-result\&#34;&gt;Passed&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-testId\&#34;&gt;qa/test_oraculos.py::test_lista_vacia&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-duration\&#34;&gt;0 ms&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-links\&#34;&gt;&lt;/td&gt;&#34;], &#34;log&#34;: &#34;No log output captured.&#34;}], &#34;qa/test_oraculos.py::test_las_dos_implementaciones_coinciden_en_300_casos_al_azar&#34;: [{&#34;extras&#34;: [], &#34;result&#34;: &#34;Passed&#34;, &#34;testId&#34;: &#34;qa/test_oraculos.py::test_las_dos_implementaciones_coinciden_en_300_casos_al_azar&#34;, &#34;duration&#34;: &#34;42 ms&#34;, &#34;resultsTableRow&#34;: [&#34;&lt;td class=\&#34;col-result\&#34;&gt;Passed&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-testId\&#34;&gt;qa/test_oraculos.py::test_las_dos_implementaciones_coinciden_en_300_casos_al_azar&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-duration\&#34;&gt;42 ms&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-links\&#34;&gt;&lt;/td&gt;&#34;], &#34;log&#34;: &#34;No log output captured.&#34;}], &#34;qa/test_rendimiento.py::test_rnf01_1_busqueda_con_cache_responde_en_menos_de_5_segundos&#34;: [{&#34;extras&#34;: [], &#34;result&#34;: &#34;Passed&#34;, &#34;testId&#34;: &#34;qa/test_rendimiento.py::test_rnf01_1_busqueda_con_cache_responde_en_menos_de_5_segundos&#34;, &#34;duration&#34;: &#34;182 ms&#34;, &#34;resultsTableRow&#34;: [&#34;&lt;td class=\&#34;col-result\&#34;&gt;Passed&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-testId\&#34;&gt;qa/test_rendimiento.py::test_rnf01_1_busqueda_con_cache_responde_en_menos_de_5_segundos&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-duration\&#34;&gt;182 ms&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-links\&#34;&gt;&lt;/td&gt;&#34;], &#34;log&#34;: &#34;----------------------------- Captured stdout call -----------------------------\n\nRNF-01 con cach\u00e9: mediana 0.014 s \u00b7 m\u00e1ximo 0.019 s\n&#34;}], &#34;qa/test_requisitos.py::test_los_ids_son_unicos_y_tienen_formato_del_ers&#34;: [{&#34;extras&#34;: [], &#34;result&#34;: &#34;Passed&#34;, &#34;testId&#34;: &#34;qa/test_requisitos.py::test_los_ids_son_unicos_y_tienen_formato_del_ers&#34;, &#34;duration&#34;: &#34;0 ms&#34;, &#34;resultsTableRow&#34;: [&#34;&lt;td class=\&#34;col-result\&#34;&gt;Passed&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-testId\&#34;&gt;qa/test_requisitos.py::test_los_ids_son_unicos_y_tienen_formato_del_ers&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-duration\&#34;&gt;0 ms&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-links\&#34;&gt;&lt;/td&gt;&#34;], &#34;log&#34;: &#34;No log output captured.&#34;}], &#34;qa/test_requisitos.py::test_cada_requisito_tiene_titulo_y_prioridad&#34;: [{&#34;extras&#34;: [], &#34;result&#34;: &#34;Passed&#34;, &#34;testId&#34;: &#34;qa/test_requisitos.py::test_cada_requisito_tiene_titulo_y_prioridad&#34;, &#34;duration&#34;: &#34;0 ms&#34;, &#34;resultsTableRow&#34;: [&#34;&lt;td class=\&#34;col-result\&#34;&gt;Passed&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-testId\&#34;&gt;qa/test_requisitos.py::test_cada_requisito_tiene_titulo_y_prioridad&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-duration\&#34;&gt;0 ms&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-links\&#34;&gt;&lt;/td&gt;&#34;], &#34;log&#34;: &#34;No log output captured.&#34;}], &#34;qa/test_requisitos.py::test_el_ers_define_diez_tiendas&#34;: [{&#34;extras&#34;: [], &#34;result&#34;: &#34;Passed&#34;, &#34;testId&#34;: &#34;qa/test_requisitos.py::test_el_ers_define_diez_tiendas&#34;, &#34;duration&#34;: &#34;0 ms&#34;, &#34;resultsTableRow&#34;: [&#34;&lt;td class=\&#34;col-result\&#34;&gt;Passed&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-testId\&#34;&gt;qa/test_requisitos.py::test_el_ers_define_diez_tiendas&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-duration\&#34;&gt;0 ms&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-links\&#34;&gt;&lt;/td&gt;&#34;], &#34;log&#34;: &#34;No log output captured.&#34;}], &#34;qa/test_seguridad.py::test_rnf02_2_inyeccion_en_el_producto_no_rompe_ni_filtra[&#39;; DROP TABLE usuarios;--]&#34;: [{&#34;extras&#34;: [], &#34;result&#34;: &#34;Passed&#34;, &#34;testId&#34;: &#34;qa/test_seguridad.py::test_rnf02_2_inyeccion_en_el_producto_no_rompe_ni_filtra[&#39;; DROP TABLE usuarios;--]&#34;, &#34;duration&#34;: &#34;20 ms&#34;, &#34;resultsTableRow&#34;: [&#34;&lt;td class=\&#34;col-result\&#34;&gt;Passed&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-testId\&#34;&gt;qa/test_seguridad.py::test_rnf02_2_inyeccion_en_el_producto_no_rompe_ni_filtra[&#39;; DROP TABLE usuarios;--]&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-duration\&#34;&gt;20 ms&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-links\&#34;&gt;&lt;/td&gt;&#34;], &#34;log&#34;: &#34;No log output captured.&#34;}], &#34;qa/test_seguridad.py::test_rnf02_2_inyeccion_en_el_producto_no_rompe_ni_filtra[&#39; OR &#39;1&#39;=&#39;1]&#34;: [{&#34;extras&#34;: [], &#34;result&#34;: &#34;Passed&#34;, &#34;testId&#34;: &#34;qa/test_seguridad.py::test_rnf02_2_inyeccion_en_el_producto_no_rompe_ni_filtra[&#39; OR &#39;1&#39;=&#39;1]&#34;, &#34;duration&#34;: &#34;24 ms&#34;, &#34;resultsTableRow&#34;: [&#34;&lt;td class=\&#34;col-result\&#34;&gt;Passed&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-testId\&#34;&gt;qa/test_seguridad.py::test_rnf02_2_inyeccion_en_el_producto_no_rompe_ni_filtra[&#39; OR &#39;1&#39;=&#39;1]&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-duration\&#34;&gt;24 ms&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-links\&#34;&gt;&lt;/td&gt;&#34;], &#34;log&#34;: &#34;No log output captured.&#34;}], &#34;qa/test_seguridad.py::test_rnf02_2_inyeccion_en_el_producto_no_rompe_ni_filtra[1; SELECT pg_sleep(5)--]&#34;: [{&#34;extras&#34;: [], &#34;result&#34;: &#34;Passed&#34;, &#34;testId&#34;: &#34;qa/test_seguridad.py::test_rnf02_2_inyeccion_en_el_producto_no_rompe_ni_filtra[1; SELECT pg_sleep(5)--]&#34;, &#34;duration&#34;: &#34;27 ms&#34;, &#34;resultsTableRow&#34;: [&#34;&lt;td class=\&#34;col-result\&#34;&gt;Passed&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-testId\&#34;&gt;qa/test_seguridad.py::test_rnf02_2_inyeccion_en_el_producto_no_rompe_ni_filtra[1; SELECT pg_sleep(5)--]&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-duration\&#34;&gt;27 ms&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-links\&#34;&gt;&lt;/td&gt;&#34;], &#34;log&#34;: &#34;No log output captured.&#34;}], &#34;qa/test_seguridad.py::test_rnf02_2_inyeccion_en_el_producto_no_rompe_ni_filtra[\&#34; OR \&#34;\&#34;=\&#34;]&#34;: [{&#34;extras&#34;: [], &#34;result&#34;: &#34;Passed&#34;, &#34;testId&#34;: &#34;qa/test_seguridad.py::test_rnf02_2_inyeccion_en_el_producto_no_rompe_ni_filtra[\&#34; OR \&#34;\&#34;=\&#34;]&#34;, &#34;duration&#34;: &#34;19 ms&#34;, &#34;resultsTableRow&#34;: [&#34;&lt;td class=\&#34;col-result\&#34;&gt;Passed&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-testId\&#34;&gt;qa/test_seguridad.py::test_rnf02_2_inyeccion_en_el_producto_no_rompe_ni_filtra[\&#34; OR \&#34;\&#34;=\&#34;]&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-duration\&#34;&gt;19 ms&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-links\&#34;&gt;&lt;/td&gt;&#34;], &#34;log&#34;: &#34;No log output captured.&#34;}], &#34;qa/test_seguridad.py::test_rnf02_2_inyeccion_en_el_producto_no_rompe_ni_filtra[&lt;script&gt;alert(1)&lt;/script&gt;]&#34;: [{&#34;extras&#34;: [], &#34;result&#34;: &#34;Passed&#34;, &#34;testId&#34;: &#34;qa/test_seguridad.py::test_rnf02_2_inyeccion_en_el_producto_no_rompe_ni_filtra[&lt;script&gt;alert(1)&lt;/script&gt;]&#34;, &#34;duration&#34;: &#34;24 ms&#34;, &#34;resultsTableRow&#34;: [&#34;&lt;td class=\&#34;col-result\&#34;&gt;Passed&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-testId\&#34;&gt;qa/test_seguridad.py::test_rnf02_2_inyeccion_en_el_producto_no_rompe_ni_filtra[&lt;script&gt;alert(1)&lt;/script&gt;]&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-duration\&#34;&gt;24 ms&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-links\&#34;&gt;&lt;/td&gt;&#34;], &#34;log&#34;: &#34;No log output captured.&#34;}], &#34;qa/test_seguridad.py::test_rnf02_2_inyeccion_en_el_producto_no_rompe_ni_filtra[\\xf1and\\xfa \\U0001f680 ]&#34;: [{&#34;extras&#34;: [], &#34;result&#34;: &#34;Passed&#34;, &#34;testId&#34;: &#34;qa/test_seguridad.py::test_rnf02_2_inyeccion_en_el_producto_no_rompe_ni_filtra[\\xf1and\\xfa \\U0001f680 ]&#34;, &#34;duration&#34;: &#34;23 ms&#34;, &#34;resultsTableRow&#34;: [&#34;&lt;td class=\&#34;col-result\&#34;&gt;Passed&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-testId\&#34;&gt;qa/test_seguridad.py::test_rnf02_2_inyeccion_en_el_producto_no_rompe_ni_filtra[\\xf1and\\xfa \\U0001f680 ]&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-duration\&#34;&gt;23 ms&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-links\&#34;&gt;&lt;/td&gt;&#34;], &#34;log&#34;: &#34;No log output captured.&#34;}], &#34;qa/test_seguridad.py::test_rnf02_2_inyeccion_en_el_producto_no_rompe_ni_filtra[%&#39; UNION SELECT contrasena_hash FROM usuarios--]&#34;: [{&#34;extras&#34;: [], &#34;result&#34;: &#34;Passed&#34;, &#34;testId&#34;: &#34;qa/test_seguridad.py::test_rnf02_2_inyeccion_en_el_producto_no_rompe_ni_filtra[%&#39; UNION SELECT contrasena_hash FROM usuarios--]&#34;, &#34;duration&#34;: &#34;19 ms&#34;, &#34;resultsTableRow&#34;: [&#34;&lt;td class=\&#34;col-result\&#34;&gt;Passed&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-testId\&#34;&gt;qa/test_seguridad.py::test_rnf02_2_inyeccion_en_el_producto_no_rompe_ni_filtra[%&#39; UNION SELECT contrasena_hash FROM usuarios--]&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-duration\&#34;&gt;19 ms&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-links\&#34;&gt;&lt;/td&gt;&#34;], &#34;log&#34;: &#34;No log output captured.&#34;}], &#34;qa/test_seguridad.py::test_rnf02_2b_inyeccion_en_el_correo_se_rechaza[&#39;; DROP TABLE usuarios;--]&#34;: [{&#34;extras&#34;: [], &#34;result&#34;: &#34;Passed&#34;, &#34;testId&#34;: &#34;qa/test_seguridad.py::test_rnf02_2b_inyeccion_en_el_correo_se_rechaza[&#39;; DROP TABLE usuarios;--]&#34;, &#34;duration&#34;: &#34;4 ms&#34;, &#34;resultsTableRow&#34;: [&#34;&lt;td class=\&#34;col-result\&#34;&gt;Passed&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-testId\&#34;&gt;qa/test_seguridad.py::test_rnf02_2b_inyeccion_en_el_correo_se_rechaza[&#39;; DROP TABLE usuarios;--]&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-duration\&#34;&gt;4 ms&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-links\&#34;&gt;&lt;/td&gt;&#34;], &#34;log&#34;: &#34;No log output captured.&#34;}], &#34;qa/test_seguridad.py::test_rnf02_2b_inyeccion_en_el_correo_se_rechaza[&#39; OR &#39;1&#39;=&#39;1]&#34;: [{&#34;extras&#34;: [], &#34;result&#34;: &#34;Passed&#34;, &#34;testId&#34;: &#34;qa/test_seguridad.py::test_rnf02_2b_inyeccion_en_el_correo_se_rechaza[&#39; OR &#39;1&#39;=&#39;1]&#34;, &#34;duration&#34;: &#34;4 ms&#34;, &#34;resultsTableRow&#34;: [&#34;&lt;td class=\&#34;col-result\&#34;&gt;Passed&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-testId\&#34;&gt;qa/test_seguridad.py::test_rnf02_2b_inyeccion_en_el_correo_se_rechaza[&#39; OR &#39;1&#39;=&#39;1]&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-duration\&#34;&gt;4 ms&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-links\&#34;&gt;&lt;/td&gt;&#34;], &#34;log&#34;: &#34;No log output captured.&#34;}], &#34;qa/test_seguridad.py::test_rnf02_2b_inyeccion_en_el_correo_se_rechaza[1; SELECT pg_sleep(5)--]&#34;: [{&#34;extras&#34;: [], &#34;result&#34;: &#34;Passed&#34;, &#34;testId&#34;: &#34;qa/test_seguridad.py::test_rnf02_2b_inyeccion_en_el_correo_se_rechaza[1; SELECT pg_sleep(5)--]&#34;, &#34;duration&#34;: &#34;4 ms&#34;, &#34;resultsTableRow&#34;: [&#34;&lt;td class=\&#34;col-result\&#34;&gt;Passed&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-testId\&#34;&gt;qa/test_seguridad.py::test_rnf02_2b_inyeccion_en_el_correo_se_rechaza[1; SELECT pg_sleep(5)--]&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-duration\&#34;&gt;4 ms&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-links\&#34;&gt;&lt;/td&gt;&#34;], &#34;log&#34;: &#34;No log output captured.&#34;}], &#34;qa/test_seguridad.py::test_rnf02_2b_inyeccion_en_el_correo_se_rechaza[\&#34; OR \&#34;\&#34;=\&#34;]&#34;: [{&#34;extras&#34;: [], &#34;result&#34;: &#34;Passed&#34;, &#34;testId&#34;: &#34;qa/test_seguridad.py::test_rnf02_2b_inyeccion_en_el_correo_se_rechaza[\&#34; OR \&#34;\&#34;=\&#34;]&#34;, &#34;duration&#34;: &#34;4 ms&#34;, &#34;resultsTableRow&#34;: [&#34;&lt;td class=\&#34;col-result\&#34;&gt;Passed&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-testId\&#34;&gt;qa/test_seguridad.py::test_rnf02_2b_inyeccion_en_el_correo_se_rechaza[\&#34; OR \&#34;\&#34;=\&#34;]&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-duration\&#34;&gt;4 ms&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-links\&#34;&gt;&lt;/td&gt;&#34;], &#34;log&#34;: &#34;No log output captured.&#34;}], &#34;qa/test_seguridad.py::test_rnf02_2b_inyeccion_en_el_correo_se_rechaza[&lt;script&gt;alert(1)&lt;/script&gt;]&#34;: [{&#34;extras&#34;: [], &#34;result&#34;: &#34;Passed&#34;, &#34;testId&#34;: &#34;qa/test_seguridad.py::test_rnf02_2b_inyeccion_en_el_correo_se_rechaza[&lt;script&gt;alert(1)&lt;/script&gt;]&#34;, &#34;duration&#34;: &#34;4 ms&#34;, &#34;resultsTableRow&#34;: [&#34;&lt;td class=\&#34;col-result\&#34;&gt;Passed&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-testId\&#34;&gt;qa/test_seguridad.py::test_rnf02_2b_inyeccion_en_el_correo_se_rechaza[&lt;script&gt;alert(1)&lt;/script&gt;]&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-duration\&#34;&gt;4 ms&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-links\&#34;&gt;&lt;/td&gt;&#34;], &#34;log&#34;: &#34;No log output captured.&#34;}], &#34;qa/test_seguridad.py::test_rnf02_2b_inyeccion_en_el_correo_se_rechaza[\\xf1and\\xfa \\U0001f680 ]&#34;: [{&#34;extras&#34;: [], &#34;result&#34;: &#34;Passed&#34;, &#34;testId&#34;: &#34;qa/test_seguridad.py::test_rnf02_2b_inyeccion_en_el_correo_se_rechaza[\\xf1and\\xfa \\U0001f680 ]&#34;, &#34;duration&#34;: &#34;4 ms&#34;, &#34;resultsTableRow&#34;: [&#34;&lt;td class=\&#34;col-result\&#34;&gt;Passed&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-testId\&#34;&gt;qa/test_seguridad.py::test_rnf02_2b_inyeccion_en_el_correo_se_rechaza[\\xf1and\\xfa \\U0001f680 ]&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-duration\&#34;&gt;4 ms&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-links\&#34;&gt;&lt;/td&gt;&#34;], &#34;log&#34;: &#34;No log output captured.&#34;}], &#34;qa/test_seguridad.py::test_rnf02_2b_inyeccion_en_el_correo_se_rechaza[%&#39; UNION SELECT contrasena_hash FROM usuarios--]&#34;: [{&#34;extras&#34;: [], &#34;result&#34;: &#34;Passed&#34;, &#34;testId&#34;: &#34;qa/test_seguridad.py::test_rnf02_2b_inyeccion_en_el_correo_se_rechaza[%&#39; UNION SELECT contrasena_hash FROM usuarios--]&#34;, &#34;duration&#34;: &#34;4 ms&#34;, &#34;resultsTableRow&#34;: [&#34;&lt;td class=\&#34;col-result\&#34;&gt;Passed&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-testId\&#34;&gt;qa/test_seguridad.py::test_rnf02_2b_inyeccion_en_el_correo_se_rechaza[%&#39; UNION SELECT contrasena_hash FROM usuarios--]&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-duration\&#34;&gt;4 ms&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-links\&#34;&gt;&lt;/td&gt;&#34;], &#34;log&#34;: &#34;No log output captured.&#34;}], &#34;qa/test_seguridad.py::test_rnf02_2c_inyeccion_en_la_contrasena_no_da_acceso[&#39;; DROP TABLE usuarios;--]&#34;: [{&#34;extras&#34;: [], &#34;result&#34;: &#34;Passed&#34;, &#34;testId&#34;: &#34;qa/test_seguridad.py::test_rnf02_2c_inyeccion_en_la_contrasena_no_da_acceso[&#39;; DROP TABLE usuarios;--]&#34;, &#34;duration&#34;: &#34;479 ms&#34;, &#34;resultsTableRow&#34;: [&#34;&lt;td class=\&#34;col-result\&#34;&gt;Passed&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-testId\&#34;&gt;qa/test_seguridad.py::test_rnf02_2c_inyeccion_en_la_contrasena_no_da_acceso[&#39;; DROP TABLE usuarios;--]&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-duration\&#34;&gt;479 ms&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-links\&#34;&gt;&lt;/td&gt;&#34;], &#34;log&#34;: &#34;No log output captured.&#34;}], &#34;qa/test_seguridad.py::test_rnf02_2c_inyeccion_en_la_contrasena_no_da_acceso[&#39; OR &#39;1&#39;=&#39;1]&#34;: [{&#34;extras&#34;: [], &#34;result&#34;: &#34;Passed&#34;, &#34;testId&#34;: &#34;qa/test_seguridad.py::test_rnf02_2c_inyeccion_en_la_contrasena_no_da_acceso[&#39; OR &#39;1&#39;=&#39;1]&#34;, &#34;duration&#34;: &#34;477 ms&#34;, &#34;resultsTableRow&#34;: [&#34;&lt;td class=\&#34;col-result\&#34;&gt;Passed&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-testId\&#34;&gt;qa/test_seguridad.py::test_rnf02_2c_inyeccion_en_la_contrasena_no_da_acceso[&#39; OR &#39;1&#39;=&#39;1]&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-duration\&#34;&gt;477 ms&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-links\&#34;&gt;&lt;/td&gt;&#34;], &#34;log&#34;: &#34;No log output captured.&#34;}], &#34;qa/test_seguridad.py::test_rnf02_2c_inyeccion_en_la_contrasena_no_da_acceso[1; SELECT pg_sleep(5)--]&#34;: [{&#34;extras&#34;: [], &#34;result&#34;: &#34;Passed&#34;, &#34;testId&#34;: &#34;qa/test_seguridad.py::test_rnf02_2c_inyeccion_en_la_contrasena_no_da_acceso[1; SELECT pg_sleep(5)--]&#34;, &#34;duration&#34;: &#34;478 ms&#34;, &#34;resultsTableRow&#34;: [&#34;&lt;td class=\&#34;col-result\&#34;&gt;Passed&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-testId\&#34;&gt;qa/test_seguridad.py::test_rnf02_2c_inyeccion_en_la_contrasena_no_da_acceso[1; SELECT pg_sleep(5)--]&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-duration\&#34;&gt;478 ms&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-links\&#34;&gt;&lt;/td&gt;&#34;], &#34;log&#34;: &#34;No log output captured.&#34;}], &#34;qa/test_seguridad.py::test_rnf02_2c_inyeccion_en_la_contrasena_no_da_acceso[\&#34; OR \&#34;\&#34;=\&#34;]&#34;: [{&#34;extras&#34;: [], &#34;result&#34;: &#34;Passed&#34;, &#34;testId&#34;: &#34;qa/test_seguridad.py::test_rnf02_2c_inyeccion_en_la_contrasena_no_da_acceso[\&#34; OR \&#34;\&#34;=\&#34;]&#34;, &#34;duration&#34;: &#34;477 ms&#34;, &#34;resultsTableRow&#34;: [&#34;&lt;td class=\&#34;col-result\&#34;&gt;Passed&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-testId\&#34;&gt;qa/test_seguridad.py::test_rnf02_2c_inyeccion_en_la_contrasena_no_da_acceso[\&#34; OR \&#34;\&#34;=\&#34;]&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-duration\&#34;&gt;477 ms&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-links\&#34;&gt;&lt;/td&gt;&#34;], &#34;log&#34;: &#34;No log output captured.&#34;}], &#34;qa/test_seguridad.py::test_rnf02_2c_inyeccion_en_la_contrasena_no_da_acceso[&lt;script&gt;alert(1)&lt;/script&gt;]&#34;: [{&#34;extras&#34;: [], &#34;result&#34;: &#34;Passed&#34;, &#34;testId&#34;: &#34;qa/test_seguridad.py::test_rnf02_2c_inyeccion_en_la_contrasena_no_da_acceso[&lt;script&gt;alert(1)&lt;/script&gt;]&#34;, &#34;duration&#34;: &#34;478 ms&#34;, &#34;resultsTableRow&#34;: [&#34;&lt;td class=\&#34;col-result\&#34;&gt;Passed&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-testId\&#34;&gt;qa/test_seguridad.py::test_rnf02_2c_inyeccion_en_la_contrasena_no_da_acceso[&lt;script&gt;alert(1)&lt;/script&gt;]&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-duration\&#34;&gt;478 ms&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-links\&#34;&gt;&lt;/td&gt;&#34;], &#34;log&#34;: &#34;No log output captured.&#34;}], &#34;qa/test_seguridad.py::test_rnf02_2c_inyeccion_en_la_contrasena_no_da_acceso[\\xf1and\\xfa \\U0001f680 ]&#34;: [{&#34;extras&#34;: [], &#34;result&#34;: &#34;Passed&#34;, &#34;testId&#34;: &#34;qa/test_seguridad.py::test_rnf02_2c_inyeccion_en_la_contrasena_no_da_acceso[\\xf1and\\xfa \\U0001f680 ]&#34;, &#34;duration&#34;: &#34;480 ms&#34;, &#34;resultsTableRow&#34;: [&#34;&lt;td class=\&#34;col-result\&#34;&gt;Passed&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-testId\&#34;&gt;qa/test_seguridad.py::test_rnf02_2c_inyeccion_en_la_contrasena_no_da_acceso[\\xf1and\\xfa \\U0001f680 ]&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-duration\&#34;&gt;480 ms&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-links\&#34;&gt;&lt;/td&gt;&#34;], &#34;log&#34;: &#34;No log output captured.&#34;}], &#34;qa/test_seguridad.py::test_rnf02_2c_inyeccion_en_la_contrasena_no_da_acceso[%&#39; UNION SELECT contrasena_hash FROM usuarios--]&#34;: [{&#34;extras&#34;: [], &#34;result&#34;: &#34;Passed&#34;, &#34;testId&#34;: &#34;qa/test_seguridad.py::test_rnf02_2c_inyeccion_en_la_contrasena_no_da_acceso[%&#39; UNION SELECT contrasena_hash FROM usuarios--]&#34;, &#34;duration&#34;: &#34;477 ms&#34;, &#34;resultsTableRow&#34;: [&#34;&lt;td class=\&#34;col-result\&#34;&gt;Passed&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-testId\&#34;&gt;qa/test_seguridad.py::test_rnf02_2c_inyeccion_en_la_contrasena_no_da_acceso[%&#39; UNION SELECT contrasena_hash FROM usuarios--]&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-duration\&#34;&gt;477 ms&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-links\&#34;&gt;&lt;/td&gt;&#34;], &#34;log&#34;: &#34;No log output captured.&#34;}], &#34;qa/test_seguridad.py::test_rnf02_2d_inyeccion_en_tiendas_y_en_el_token_no_da_error_500[&#39;; DROP TABLE usuarios;--]&#34;: [{&#34;extras&#34;: [], &#34;result&#34;: &#34;Passed&#34;, &#34;testId&#34;: &#34;qa/test_seguridad.py::test_rnf02_2d_inyeccion_en_tiendas_y_en_el_token_no_da_error_500[&#39;; DROP TABLE usuarios;--]&#34;, &#34;duration&#34;: &#34;7 ms&#34;, &#34;resultsTableRow&#34;: [&#34;&lt;td class=\&#34;col-result\&#34;&gt;Passed&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-testId\&#34;&gt;qa/test_seguridad.py::test_rnf02_2d_inyeccion_en_tiendas_y_en_el_token_no_da_error_500[&#39;; DROP TABLE usuarios;--]&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-duration\&#34;&gt;7 ms&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-links\&#34;&gt;&lt;/td&gt;&#34;], &#34;log&#34;: &#34;No log output captured.&#34;}], &#34;qa/test_seguridad.py::test_rnf02_2d_inyeccion_en_tiendas_y_en_el_token_no_da_error_500[&#39; OR &#39;1&#39;=&#39;1]&#34;: [{&#34;extras&#34;: [], &#34;result&#34;: &#34;Passed&#34;, &#34;testId&#34;: &#34;qa/test_seguridad.py::test_rnf02_2d_inyeccion_en_tiendas_y_en_el_token_no_da_error_500[&#39; OR &#39;1&#39;=&#39;1]&#34;, &#34;duration&#34;: &#34;6 ms&#34;, &#34;resultsTableRow&#34;: [&#34;&lt;td class=\&#34;col-result\&#34;&gt;Passed&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-testId\&#34;&gt;qa/test_seguridad.py::test_rnf02_2d_inyeccion_en_tiendas_y_en_el_token_no_da_error_500[&#39; OR &#39;1&#39;=&#39;1]&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-duration\&#34;&gt;6 ms&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-links\&#34;&gt;&lt;/td&gt;&#34;], &#34;log&#34;: &#34;No log output captured.&#34;}], &#34;qa/test_seguridad.py::test_rnf02_2d_inyeccion_en_tiendas_y_en_el_token_no_da_error_500[1; SELECT pg_sleep(5)--]&#34;: [{&#34;extras&#34;: [], &#34;result&#34;: &#34;Passed&#34;, &#34;testId&#34;: &#34;qa/test_seguridad.py::test_rnf02_2d_inyeccion_en_tiendas_y_en_el_token_no_da_error_500[1; SELECT pg_sleep(5)--]&#34;, &#34;duration&#34;: &#34;5 ms&#34;, &#34;resultsTableRow&#34;: [&#34;&lt;td class=\&#34;col-result\&#34;&gt;Passed&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-testId\&#34;&gt;qa/test_seguridad.py::test_rnf02_2d_inyeccion_en_tiendas_y_en_el_token_no_da_error_500[1; SELECT pg_sleep(5)--]&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-duration\&#34;&gt;5 ms&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-links\&#34;&gt;&lt;/td&gt;&#34;], &#34;log&#34;: &#34;No log output captured.&#34;}], &#34;qa/test_seguridad.py::test_rnf02_2d_inyeccion_en_tiendas_y_en_el_token_no_da_error_500[\&#34; OR \&#34;\&#34;=\&#34;]&#34;: [{&#34;extras&#34;: [], &#34;result&#34;: &#34;Passed&#34;, &#34;testId&#34;: &#34;qa/test_seguridad.py::test_rnf02_2d_inyeccion_en_tiendas_y_en_el_token_no_da_error_500[\&#34; OR \&#34;\&#34;=\&#34;]&#34;, &#34;duration&#34;: &#34;6 ms&#34;, &#34;resultsTableRow&#34;: [&#34;&lt;td class=\&#34;col-result\&#34;&gt;Passed&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-testId\&#34;&gt;qa/test_seguridad.py::test_rnf02_2d_inyeccion_en_tiendas_y_en_el_token_no_da_error_500[\&#34; OR \&#34;\&#34;=\&#34;]&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-duration\&#34;&gt;6 ms&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-links\&#34;&gt;&lt;/td&gt;&#34;], &#34;log&#34;: &#34;No log output captured.&#34;}], &#34;qa/test_seguridad.py::test_rnf02_2d_inyeccion_en_tiendas_y_en_el_token_no_da_error_500[&lt;script&gt;alert(1)&lt;/script&gt;]&#34;: [{&#34;extras&#34;: [], &#34;result&#34;: &#34;Passed&#34;, &#34;testId&#34;: &#34;qa/test_seguridad.py::test_rnf02_2d_inyeccion_en_tiendas_y_en_el_token_no_da_error_500[&lt;script&gt;alert(1)&lt;/script&gt;]&#34;, &#34;duration&#34;: &#34;6 ms&#34;, &#34;resultsTableRow&#34;: [&#34;&lt;td class=\&#34;col-result\&#34;&gt;Passed&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-testId\&#34;&gt;qa/test_seguridad.py::test_rnf02_2d_inyeccion_en_tiendas_y_en_el_token_no_da_error_500[&lt;script&gt;alert(1)&lt;/script&gt;]&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-duration\&#34;&gt;6 ms&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-links\&#34;&gt;&lt;/td&gt;&#34;], &#34;log&#34;: &#34;No log output captured.&#34;}], &#34;qa/test_seguridad.py::test_rnf02_2d_inyeccion_en_tiendas_y_en_el_token_no_da_error_500[%&#39; UNION SELECT contrasena_hash FROM usuarios--]&#34;: [{&#34;extras&#34;: [], &#34;result&#34;: &#34;Passed&#34;, &#34;testId&#34;: &#34;qa/test_seguridad.py::test_rnf02_2d_inyeccion_en_tiendas_y_en_el_token_no_da_error_500[%&#39; UNION SELECT contrasena_hash FROM usuarios--]&#34;, &#34;duration&#34;: &#34;6 ms&#34;, &#34;resultsTableRow&#34;: [&#34;&lt;td class=\&#34;col-result\&#34;&gt;Passed&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-testId\&#34;&gt;qa/test_seguridad.py::test_rnf02_2d_inyeccion_en_tiendas_y_en_el_token_no_da_error_500[%&#39; UNION SELECT contrasena_hash FROM usuarios--]&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-duration\&#34;&gt;6 ms&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-links\&#34;&gt;&lt;/td&gt;&#34;], &#34;log&#34;: &#34;No log output captured.&#34;}], &#34;qa/test_seguridad.py::test_rnf02_2e_los_errores_de_validacion_no_muestran_detalles_internos&#34;: [{&#34;extras&#34;: [], &#34;result&#34;: &#34;Passed&#34;, &#34;testId&#34;: &#34;qa/test_seguridad.py::test_rnf02_2e_los_errores_de_validacion_no_muestran_detalles_internos&#34;, &#34;duration&#34;: &#34;2 ms&#34;, &#34;resultsTableRow&#34;: [&#34;&lt;td class=\&#34;col-result\&#34;&gt;Passed&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-testId\&#34;&gt;qa/test_seguridad.py::test_rnf02_2e_los_errores_de_validacion_no_muestran_detalles_internos&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-duration\&#34;&gt;2 ms&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-links\&#34;&gt;&lt;/td&gt;&#34;], &#34;log&#34;: &#34;No log output captured.&#34;}], &#34;qa/test_tienda_caida.py::test_cp06_1_una_tienda_caida_se_avisa_y_se_muestran_las_demas&#34;: [{&#34;extras&#34;: [], &#34;result&#34;: &#34;Passed&#34;, &#34;testId&#34;: &#34;qa/test_tienda_caida.py::test_cp06_1_una_tienda_caida_se_avisa_y_se_muestran_las_demas&#34;, &#34;duration&#34;: &#34;14 ms&#34;, &#34;resultsTableRow&#34;: [&#34;&lt;td class=\&#34;col-result\&#34;&gt;Passed&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-testId\&#34;&gt;qa/test_tienda_caida.py::test_cp06_1_una_tienda_caida_se_avisa_y_se_muestran_las_demas&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-duration\&#34;&gt;14 ms&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-links\&#34;&gt;&lt;/td&gt;&#34;], &#34;log&#34;: &#34;No log output captured.&#34;}], &#34;qa/test_tienda_caida.py::test_cp06_2_todas_las_tiendas_caidas_responde_200_con_avisos&#34;: [{&#34;extras&#34;: [], &#34;result&#34;: &#34;Passed&#34;, &#34;testId&#34;: &#34;qa/test_tienda_caida.py::test_cp06_2_todas_las_tiendas_caidas_responde_200_con_avisos&#34;, &#34;duration&#34;: &#34;17 ms&#34;, &#34;resultsTableRow&#34;: [&#34;&lt;td class=\&#34;col-result\&#34;&gt;Passed&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-testId\&#34;&gt;qa/test_tienda_caida.py::test_cp06_2_todas_las_tiendas_caidas_responde_200_con_avisos&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-duration\&#34;&gt;17 ms&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-links\&#34;&gt;&lt;/td&gt;&#34;], &#34;log&#34;: &#34;No log output captured.&#34;}], &#34;qa/test_tienda_caida.py::test_cp06_3_tienda_caida_con_datos_viejos_usa_la_cache_y_lo_avisa&#34;: [{&#34;extras&#34;: [], &#34;result&#34;: &#34;Passed&#34;, &#34;testId&#34;: &#34;qa/test_tienda_caida.py::test_cp06_3_tienda_caida_con_datos_viejos_usa_la_cache_y_lo_avisa&#34;, &#34;duration&#34;: &#34;51 ms&#34;, &#34;resultsTableRow&#34;: [&#34;&lt;td class=\&#34;col-result\&#34;&gt;Passed&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-testId\&#34;&gt;qa/test_tienda_caida.py::test_cp06_3_tienda_caida_con_datos_viejos_usa_la_cache_y_lo_avisa&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-duration\&#34;&gt;51 ms&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-links\&#34;&gt;&lt;/td&gt;&#34;], &#34;log&#34;: &#34;No log output captured.&#34;}], &#34;qa/test_tienda_caida.py::test_cp06_4_tienda_lenta_no_bloquea_la_respuesta&#34;: [{&#34;extras&#34;: [], &#34;result&#34;: &#34;Passed&#34;, &#34;testId&#34;: &#34;qa/test_tienda_caida.py::test_cp06_4_tienda_lenta_no_bloquea_la_respuesta&#34;, &#34;duration&#34;: &#34;409 ms&#34;, &#34;resultsTableRow&#34;: [&#34;&lt;td class=\&#34;col-result\&#34;&gt;Passed&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-testId\&#34;&gt;qa/test_tienda_caida.py::test_cp06_4_tienda_lenta_no_bloquea_la_respuesta&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-duration\&#34;&gt;409 ms&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-links\&#34;&gt;&lt;/td&gt;&#34;], &#34;log&#34;: &#34;No log output captured.&#34;}], &#34;qa/test_tienda_caida.py::test_rnf05_1_con_tiendas_caidas_el_resto_del_sistema_sigue_vivo&#34;: [{&#34;extras&#34;: [], &#34;result&#34;: &#34;Passed&#34;, &#34;testId&#34;: &#34;qa/test_tienda_caida.py::test_rnf05_1_con_tiendas_caidas_el_resto_del_sistema_sigue_vivo&#34;, &#34;duration&#34;: &#34;24 ms&#34;, &#34;resultsTableRow&#34;: [&#34;&lt;td class=\&#34;col-result\&#34;&gt;Passed&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-testId\&#34;&gt;qa/test_tienda_caida.py::test_rnf05_1_con_tiendas_caidas_el_resto_del_sistema_sigue_vivo&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-duration\&#34;&gt;24 ms&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-links\&#34;&gt;&lt;/td&gt;&#34;], &#34;log&#34;: &#34;No log output captured.&#34;}], &#34;qa/test_tiendas.py::test_cp04_2_la_base_tiene_las_tiendas_del_ers&#34;: [{&#34;extras&#34;: [], &#34;result&#34;: &#34;Passed&#34;, &#34;testId&#34;: &#34;qa/test_tiendas.py::test_cp04_2_la_base_tiene_las_tiendas_del_ers&#34;, &#34;duration&#34;: &#34;6 ms&#34;, &#34;resultsTableRow&#34;: [&#34;&lt;td class=\&#34;col-result\&#34;&gt;Passed&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-testId\&#34;&gt;qa/test_tiendas.py::test_cp04_2_la_base_tiene_las_tiendas_del_ers&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-duration\&#34;&gt;6 ms&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-links\&#34;&gt;&lt;/td&gt;&#34;], &#34;log&#34;: &#34;No log output captured.&#34;}], &#34;qa/test_tiendas.py::test_cp04_2b_la_api_expone_las_10_tiendas_del_ers&#34;: [{&#34;extras&#34;: [], &#34;result&#34;: &#34;XFailed&#34;, &#34;testId&#34;: &#34;qa/test_tiendas.py::test_cp04_2b_la_api_expone_las_10_tiendas_del_ers&#34;, &#34;duration&#34;: &#34;4 ms&#34;, &#34;resultsTableRow&#34;: [&#34;&lt;td class=\&#34;col-result\&#34;&gt;XFailed&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-testId\&#34;&gt;qa/test_tiendas.py::test_cp04_2b_la_api_expone_las_10_tiendas_del_ers&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-duration\&#34;&gt;4 ms&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-links\&#34;&gt;&lt;/td&gt;&#34;], &#34;log&#34;: &#34;client = &amp;lt;starlette.testclient.TestClient object at 0x7faf87b48c20&amp;gt;\n\n    @pytest.mark.req(&amp;quot;RF-04&amp;quot;)\n    @pytest.mark.xfail(strict=False, reason=(\n        &amp;quot;DEF-02: la API expone 9 tiendas y el ERS dice 10 (falta Mercado Libre). &amp;quot;\n        &amp;quot;Pasa a verde cuando el equipo agregue el conector o corrija el ERS.&amp;quot;))\n    def test_cp04_2b_la_api_expone_las_10_tiendas_del_ers(client):\n        api = _api(client)\n&amp;gt;       assert api == ERS, f&amp;quot;Sin conector: {sorted(ERS - api)} \u00b7 Fuera del ERS: {sorted(api - ERS)}&amp;quot;\nE       AssertionError: Sin conector: [&amp;#x27;Mercado Libre&amp;#x27;] \u00b7 Fuera del ERS: []\nE       assert {&amp;#x27;Alkomprar&amp;#x27;,...ecenter&amp;#x27;, ...} == {&amp;#x27;Alkomprar&amp;#x27;,...ecenter&amp;#x27;, ...}\nE         \nE         Extra items in the right set:\nE         &amp;#x27;Mercado Libre&amp;#x27;\nE         \nE         Full diff: (-: missing in left side, +: extra in left side)\nE           {\nE               &amp;#x27;Alkomprar&amp;#x27;,\nE               &amp;#x27;Alkosto&amp;#x27;,\nE               &amp;#x27;Buscalibre&amp;#x27;,\nE               &amp;#x27;Falabella&amp;#x27;,\nE               &amp;#x27;Farmatodo&amp;#x27;,\nE               &amp;#x27;Homecenter&amp;#x27;,\nE               &amp;#x27;Ktronix&amp;#x27;,\nE         -     &amp;#x27;Mercado Libre&amp;#x27;,\nE               &amp;#x27;Ol\u00edmpica&amp;#x27;,\nE               &amp;#x27;\u00c9xito&amp;#x27;,\nE           }\n\nqa/test_tiendas.py:36: AssertionError\n&#34;}], &#34;qa/test_tiendas.py::test_cp04_2c_todo_conector_tiene_su_tienda_en_la_base&#34;: [{&#34;extras&#34;: [], &#34;result&#34;: &#34;Passed&#34;, &#34;testId&#34;: &#34;qa/test_tiendas.py::test_cp04_2c_todo_conector_tiene_su_tienda_en_la_base&#34;, &#34;duration&#34;: &#34;8 ms&#34;, &#34;resultsTableRow&#34;: [&#34;&lt;td class=\&#34;col-result\&#34;&gt;Passed&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-testId\&#34;&gt;qa/test_tiendas.py::test_cp04_2c_todo_conector_tiene_su_tienda_en_la_base&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-duration\&#34;&gt;8 ms&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-links\&#34;&gt;&lt;/td&gt;&#34;], &#34;log&#34;: &#34;No log output captured.&#34;}], &#34;qa/test_tiendas.py::test_cp04_2d_ningun_conector_es_una_tienda_fuera_del_ers&#34;: [{&#34;extras&#34;: [], &#34;result&#34;: &#34;Passed&#34;, &#34;testId&#34;: &#34;qa/test_tiendas.py::test_cp04_2d_ningun_conector_es_una_tienda_fuera_del_ers&#34;, &#34;duration&#34;: &#34;3 ms&#34;, &#34;resultsTableRow&#34;: [&#34;&lt;td class=\&#34;col-result\&#34;&gt;Passed&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-testId\&#34;&gt;qa/test_tiendas.py::test_cp04_2d_ningun_conector_es_una_tienda_fuera_del_ers&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-duration\&#34;&gt;3 ms&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-links\&#34;&gt;&lt;/td&gt;&#34;], &#34;log&#34;: &#34;No log output captured.&#34;}], &#34;qa/test_tiendas.py::test_cp04_2e_los_conectores_cumplen_la_interfaz_y_no_se_repiten&#34;: [{&#34;extras&#34;: [], &#34;result&#34;: &#34;Passed&#34;, &#34;testId&#34;: &#34;qa/test_tiendas.py::test_cp04_2e_los_conectores_cumplen_la_interfaz_y_no_se_repiten&#34;, &#34;duration&#34;: &#34;0 ms&#34;, &#34;resultsTableRow&#34;: [&#34;&lt;td class=\&#34;col-result\&#34;&gt;Passed&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-testId\&#34;&gt;qa/test_tiendas.py::test_cp04_2e_los_conectores_cumplen_la_interfaz_y_no_se_repiten&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-duration\&#34;&gt;0 ms&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-links\&#34;&gt;&lt;/td&gt;&#34;], &#34;log&#34;: &#34;No log output captured.&#34;}], &#34;qa/test_tiendas.py::test_cp04_2f_tiendas_devuelve_nombre_y_especialidad&#34;: [{&#34;extras&#34;: [], &#34;result&#34;: &#34;Passed&#34;, &#34;testId&#34;: &#34;qa/test_tiendas.py::test_cp04_2f_tiendas_devuelve_nombre_y_especialidad&#34;, &#34;duration&#34;: &#34;30 ms&#34;, &#34;resultsTableRow&#34;: [&#34;&lt;td class=\&#34;col-result\&#34;&gt;Passed&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-testId\&#34;&gt;qa/test_tiendas.py::test_cp04_2f_tiendas_devuelve_nombre_y_especialidad&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-duration\&#34;&gt;30 ms&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-links\&#34;&gt;&lt;/td&gt;&#34;], &#34;log&#34;: &#34;No log output captured.&#34;}]}, &#34;renderCollapsed&#34;: [&#34;passed&#34;], &#34;initialSort&#34;: &#34;result&#34;, &#34;title&#34;: &#34;reporte_bot.html&#34;}"></div>
+    <script>
+      (function(){function r(e,n,t){function o(i,f){if(!n[i]){if(!e[i]){var c="function"==typeof require&&require;if(!f&&c)return c(i,!0);if(u)return u(i,!0);var a=new Error("Cannot find module '"+i+"'");throw a.code="MODULE_NOT_FOUND",a}var p=n[i]={exports:{}};e[i][0].call(p.exports,function(r){var n=e[i][1][r];return o(n||r)},p,p.exports,r,e,n,t)}return n[i].exports}for(var u="function"==typeof require&&require,i=0;i<t.length;i++)o(t[i]);return o}return r})()({1:[function(require,module,exports){
+const { getCollapsedCategory, setCollapsedIds } = require('./storage.js')
+
+class DataManager {
+    setManager(data) {
+        const collapsedCategories = [...getCollapsedCategory(data.renderCollapsed)]
+        const collapsedIds = []
+        const tests = Object.values(data.tests).flat().map((test, index) => {
+            const collapsed = collapsedCategories.includes(test.result.toLowerCase())
+            const id = `test_${index}`
+            if (collapsed) {
+                collapsedIds.push(id)
+            }
+            return {
+                ...test,
+                id,
+                collapsed,
+            }
+        })
+        const dataBlob = { ...data, tests }
+        this.data = { ...dataBlob }
+        this.renderData = { ...dataBlob }
+        setCollapsedIds(collapsedIds)
+    }
+
+    get allData() {
+        return { ...this.data }
+    }
+
+    resetRender() {
+        this.renderData = { ...this.data }
+    }
+
+    setRender(data) {
+        this.renderData.tests = [...data]
+    }
+
+    toggleCollapsedItem(id) {
+        this.renderData.tests = this.renderData.tests.map((test) =>
+            test.id === id ? { ...test, collapsed: !test.collapsed } : test,
+        )
+    }
+
+    set allCollapsed(collapsed) {
+        this.renderData = { ...this.renderData, tests: [...this.renderData.tests.map((test) => (
+            { ...test, collapsed }
+        ))] }
+    }
+
+    get testSubset() {
+        return [...this.renderData.tests]
+    }
+
+    get environment() {
+        return this.renderData.environment
+    }
+
+    get initialSort() {
+        return this.data.initialSort
+    }
+}
+
+module.exports = {
+    manager: new DataManager(),
+}
+
+},{"./storage.js":8}],2:[function(require,module,exports){
+const mediaViewer = require('./mediaviewer.js')
+const templateEnvRow = document.getElementById('template_environment_row')
+const templateResult = document.getElementById('template_results-table__tbody')
+
+function htmlToElements(html) {
+    const temp = document.createElement('template')
+    temp.innerHTML = html
+    return temp.content.childNodes
+}
+
+const find = (selector, elem) => {
+    if (!elem) {
+        elem = document
+    }
+    return elem.querySelector(selector)
+}
+
+const findAll = (selector, elem) => {
+    if (!elem) {
+        elem = document
+    }
+    return [...elem.querySelectorAll(selector)]
+}
+
+const dom = {
+    getStaticRow: (key, value) => {
+        const envRow = templateEnvRow.content.cloneNode(true)
+        const isObj = typeof value === 'object' && value !== null
+        const values = isObj ? Object.keys(value).map((k) => `${k}: ${value[k]}`) : null
+
+        const valuesElement = htmlToElements(
+            values ? `<ul>${values.map((val) => `<li>${val}</li>`).join('')}<ul>` : `<div>${value}</div>`)[0]
+        const td = findAll('td', envRow)
+        td[0].textContent = key
+        td[1].appendChild(valuesElement)
+
+        return envRow
+    },
+    getResultTBody: ({ testId, id, log, extras, resultsTableRow, tableHtml, result, collapsed }) => {
+        const resultBody = templateResult.content.cloneNode(true)
+        resultBody.querySelector('tbody').classList.add(result.toLowerCase())
+        resultBody.querySelector('tbody').id = testId
+        resultBody.querySelector('.collapsible').dataset.id = id
+
+        resultsTableRow.forEach((html) => {
+            const t = document.createElement('template')
+            t.innerHTML = html
+            resultBody.querySelector('.collapsible').appendChild(t.content)
+        })
+
+        if (log) {
+            // Wrap lines starting with "E" with span.error to color those lines red
+            const wrappedLog = log.replace(/^E.*$/gm, (match) => `<span class="error">${match}</span>`)
+            resultBody.querySelector('.log').innerHTML = wrappedLog
+        } else {
+            resultBody.querySelector('.log').remove()
+        }
+
+        if (collapsed) {
+            resultBody.querySelector('.collapsible > .col-result')?.classList.add('collapsed')
+            resultBody.querySelector('.extras-row').classList.add('hidden')
+        } else {
+            resultBody.querySelector('.collapsible > .col-result')?.classList.remove('collapsed')
+        }
+
+        const media = []
+        extras?.forEach(({ name, format_type, content }) => {
+            if (['image', 'video'].includes(format_type)) {
+                media.push({ path: content, name, format_type })
+            }
+
+            if (format_type === 'html') {
+                resultBody.querySelector('.extraHTML').insertAdjacentHTML('beforeend', `<div>${content}</div>`)
+            }
+        })
+        mediaViewer.setup(resultBody, media)
+
+        // Add custom html from the pytest_html_results_table_html hook
+        tableHtml?.forEach((item) => {
+            resultBody.querySelector('td[class="extra"]').insertAdjacentHTML('beforeend', item)
+        })
+
+        return resultBody
+    },
+}
+
+module.exports = {
+    dom,
+    htmlToElements,
+    find,
+    findAll,
+}
+
+},{"./mediaviewer.js":6}],3:[function(require,module,exports){
+const { manager } = require('./datamanager.js')
+const { doSort } = require('./sort.js')
+const storageModule = require('./storage.js')
+
+const getFilteredSubSet = (filter) =>
+    manager.allData.tests.filter(({ result }) => filter.includes(result.toLowerCase()))
+
+const doInitFilter = () => {
+    const currentFilter = storageModule.getVisible()
+    const filteredSubset = getFilteredSubSet(currentFilter)
+    manager.setRender(filteredSubset)
+}
+
+const doFilter = (type, show) => {
+    if (show) {
+        storageModule.showCategory(type)
+    } else {
+        storageModule.hideCategory(type)
+    }
+
+    const currentFilter = storageModule.getVisible()
+    const filteredSubset = getFilteredSubSet(currentFilter)
+    manager.setRender(filteredSubset)
+
+    const sortColumn = storageModule.getSort()
+    doSort(sortColumn, true)
+}
+
+module.exports = {
+    doFilter,
+    doInitFilter,
+}
+
+},{"./datamanager.js":1,"./sort.js":7,"./storage.js":8}],4:[function(require,module,exports){
+const { redraw, bindEvents, renderStatic } = require('./main.js')
+const { doInitFilter } = require('./filter.js')
+const { doInitSort } = require('./sort.js')
+const { manager } = require('./datamanager.js')
+const data = JSON.parse(document.getElementById('data-container').dataset.jsonblob)
+
+function init() {
+    manager.setManager(data)
+    doInitFilter()
+    doInitSort()
+    renderStatic()
+    redraw()
+    bindEvents()
+}
+
+init()
+
+},{"./datamanager.js":1,"./filter.js":3,"./main.js":5,"./sort.js":7}],5:[function(require,module,exports){
+const { dom, find, findAll } = require('./dom.js')
+const { manager } = require('./datamanager.js')
+const { doSort } = require('./sort.js')
+const { doFilter } = require('./filter.js')
+const {
+    getVisible,
+    getCollapsedIds,
+    setCollapsedIds,
+    getSort,
+    getSortDirection,
+    possibleFilters,
+} = require('./storage.js')
+
+const removeChildren = (node) => {
+    while (node.firstChild) {
+        node.removeChild(node.firstChild)
+    }
+}
+
+const renderStatic = () => {
+    const renderEnvironmentTable = () => {
+        const environment = manager.environment
+        const rows = Object.keys(environment).map((key) => dom.getStaticRow(key, environment[key]))
+        const table = document.getElementById('environment')
+        removeChildren(table)
+        rows.forEach((row) => table.appendChild(row))
+    }
+    renderEnvironmentTable()
+}
+
+const addItemToggleListener = (elem) => {
+    elem.addEventListener('click', ({ target }) => {
+        const id = target.parentElement.dataset.id
+        manager.toggleCollapsedItem(id)
+
+        const collapsedIds = getCollapsedIds()
+        if (collapsedIds.includes(id)) {
+            const updated = collapsedIds.filter((item) => item !== id)
+            setCollapsedIds(updated)
+        } else {
+            collapsedIds.push(id)
+            setCollapsedIds(collapsedIds)
+        }
+        redraw()
+    })
+}
+
+const renderContent = (tests) => {
+    const sortAttr = getSort(manager.initialSort)
+    const sortAsc = JSON.parse(getSortDirection())
+    const rows = tests.map(dom.getResultTBody)
+    const table = document.getElementById('results-table')
+    const tableHeader = document.getElementById('results-table-head')
+
+    const newTable = document.createElement('table')
+    newTable.id = 'results-table'
+
+    // remove all sorting classes and set the relevant
+    findAll('.sortable', tableHeader).forEach((elem) => elem.classList.remove('asc', 'desc'))
+    tableHeader.querySelector(`.sortable[data-column-type="${sortAttr}"]`)?.classList.add(sortAsc ? 'desc' : 'asc')
+    newTable.appendChild(tableHeader)
+
+    if (!rows.length) {
+        const emptyTable = document.getElementById('template_results-table__body--empty').content.cloneNode(true)
+        newTable.appendChild(emptyTable)
+    } else {
+        rows.forEach((row) => {
+            if (!!row) {
+                findAll('.collapsible td:not(.col-links', row).forEach(addItemToggleListener)
+                find('.logexpander', row).addEventListener('click',
+                    (evt) => evt.target.parentNode.classList.toggle('expanded'),
+                )
+                newTable.appendChild(row)
+            }
+        })
+    }
+
+    table.replaceWith(newTable)
+}
+
+const renderDerived = () => {
+    const currentFilter = getVisible()
+    possibleFilters.forEach((result) => {
+        const input = document.querySelector(`input[data-test-result="${result}"]`)
+        input.checked = currentFilter.includes(result)
+    })
+}
+
+const bindEvents = () => {
+    const filterColumn = (evt) => {
+        const { target: element } = evt
+        const { testResult } = element.dataset
+
+        doFilter(testResult, element.checked)
+        const collapsedIds = getCollapsedIds()
+        const updated = manager.renderData.tests.map((test) => {
+            return {
+                ...test,
+                collapsed: collapsedIds.includes(test.id),
+            }
+        })
+        manager.setRender(updated)
+        redraw()
+    }
+
+    const header = document.getElementById('environment-header')
+    header.addEventListener('click', () => {
+        const table = document.getElementById('environment')
+        table.classList.toggle('hidden')
+        header.classList.toggle('collapsed')
+    })
+
+    findAll('input[name="filter_checkbox"]').forEach((elem) => {
+        elem.addEventListener('click', filterColumn)
+    })
+
+    findAll('.sortable').forEach((elem) => {
+        elem.addEventListener('click', (evt) => {
+            const { target: element } = evt
+            const { columnType } = element.dataset
+            doSort(columnType)
+            redraw()
+        })
+    })
+
+    document.getElementById('show_all_details').addEventListener('click', () => {
+        manager.allCollapsed = false
+        setCollapsedIds([])
+        redraw()
+    })
+    document.getElementById('hide_all_details').addEventListener('click', () => {
+        manager.allCollapsed = true
+        const allIds = manager.renderData.tests.map((test) => test.id)
+        setCollapsedIds(allIds)
+        redraw()
+    })
+}
+
+const redraw = () => {
+    const { testSubset } = manager
+
+    renderContent(testSubset)
+    renderDerived()
+}
+
+module.exports = {
+    redraw,
+    bindEvents,
+    renderStatic,
+}
+
+},{"./datamanager.js":1,"./dom.js":2,"./filter.js":3,"./sort.js":7,"./storage.js":8}],6:[function(require,module,exports){
+class MediaViewer {
+    constructor(assets) {
+        this.assets = assets
+        this.index = 0
+    }
+
+    nextActive() {
+        this.index = this.index === this.assets.length - 1 ? 0 : this.index + 1
+        return [this.activeFile, this.index]
+    }
+
+    prevActive() {
+        this.index = this.index === 0 ? this.assets.length - 1 : this.index -1
+        return [this.activeFile, this.index]
+    }
+
+    get currentIndex() {
+        return this.index
+    }
+
+    get activeFile() {
+        return this.assets[this.index]
+    }
+}
+
+
+const setup = (resultBody, assets) => {
+    if (!assets.length) {
+        resultBody.querySelector('.media').classList.add('hidden')
+        return
+    }
+
+    const mediaViewer = new MediaViewer(assets)
+    const container = resultBody.querySelector('.media-container')
+    const leftArrow = resultBody.querySelector('.media-container__nav--left')
+    const rightArrow = resultBody.querySelector('.media-container__nav--right')
+    const mediaName = resultBody.querySelector('.media__name')
+    const counter = resultBody.querySelector('.media__counter')
+    const imageEl = resultBody.querySelector('img')
+    const sourceEl = resultBody.querySelector('source')
+    const videoEl = resultBody.querySelector('video')
+
+    const setImg = (media, index) => {
+        if (media?.format_type === 'image') {
+            imageEl.src = media.path
+
+            imageEl.classList.remove('hidden')
+            videoEl.classList.add('hidden')
+        } else if (media?.format_type === 'video') {
+            sourceEl.src = media.path
+
+            videoEl.classList.remove('hidden')
+            imageEl.classList.add('hidden')
+        }
+
+        mediaName.innerText = media?.name
+        counter.innerText = `${index + 1} / ${assets.length}`
+    }
+    setImg(mediaViewer.activeFile, mediaViewer.currentIndex)
+
+    const moveLeft = () => {
+        const [media, index] = mediaViewer.prevActive()
+        setImg(media, index)
+    }
+    const doRight = () => {
+        const [media, index] = mediaViewer.nextActive()
+        setImg(media, index)
+    }
+    const openImg = () => {
+        window.open(mediaViewer.activeFile.path, '_blank')
+    }
+    if (assets.length === 1) {
+        container.classList.add('media-container--fullscreen')
+    } else {
+        leftArrow.addEventListener('click', moveLeft)
+        rightArrow.addEventListener('click', doRight)
+    }
+    imageEl.addEventListener('click', openImg)
+}
+
+module.exports = {
+    setup,
+}
+
+},{}],7:[function(require,module,exports){
+const { manager } = require('./datamanager.js')
+const storageModule = require('./storage.js')
+
+const genericSort = (list, key, ascending, customOrder) => {
+    let sorted
+    if (customOrder) {
+        sorted = list.sort((a, b) => {
+            const aValue = a.result.toLowerCase()
+            const bValue = b.result.toLowerCase()
+
+            const aIndex = customOrder.findIndex((item) => item.toLowerCase() === aValue)
+            const bIndex = customOrder.findIndex((item) => item.toLowerCase() === bValue)
+
+            // Compare the indices to determine the sort order
+            return aIndex - bIndex
+        })
+    } else {
+        sorted = list.sort((a, b) => a[key] === b[key] ? 0 : a[key] > b[key] ? 1 : -1)
+    }
+
+    if (ascending) {
+        sorted.reverse()
+    }
+    return sorted
+}
+
+const durationSort = (list, ascending) => {
+    const parseDuration = (duration) => {
+        if (duration.includes(':')) {
+            // If it's in the format "HH:mm:ss"
+            const [hours, minutes, seconds] = duration.split(':').map(Number)
+            return (hours * 3600 + minutes * 60 + seconds) * 1000
+        } else {
+            // If it's in the format "nnn ms"
+            return parseInt(duration)
+        }
+    }
+    const sorted = list.sort((a, b) => parseDuration(a['duration']) - parseDuration(b['duration']))
+    if (ascending) {
+        sorted.reverse()
+    }
+    return sorted
+}
+
+const doInitSort = () => {
+    const type = storageModule.getSort(manager.initialSort)
+    const ascending = storageModule.getSortDirection()
+    const list = manager.testSubset
+    const initialOrder = ['Error', 'Failed', 'Rerun', 'XFailed', 'XPassed', 'Skipped', 'Passed']
+
+    storageModule.setSort(type)
+    storageModule.setSortDirection(ascending)
+
+    if (type?.toLowerCase() === 'original') {
+        manager.setRender(list)
+    } else {
+        let sortedList
+        switch (type) {
+        case 'duration':
+            sortedList = durationSort(list, ascending)
+            break
+        case 'result':
+            sortedList = genericSort(list, type, ascending, initialOrder)
+            break
+        default:
+            sortedList = genericSort(list, type, ascending)
+            break
+        }
+        manager.setRender(sortedList)
+    }
+}
+
+const doSort = (type, skipDirection) => {
+    const newSortType = storageModule.getSort(manager.initialSort) !== type
+    const currentAsc = storageModule.getSortDirection()
+    let ascending
+    if (skipDirection) {
+        ascending = currentAsc
+    } else {
+        ascending = newSortType ? false : !currentAsc
+    }
+    storageModule.setSort(type)
+    storageModule.setSortDirection(ascending)
+
+    const list = manager.testSubset
+    const sortedList = type === 'duration' ? durationSort(list, ascending) : genericSort(list, type, ascending)
+    manager.setRender(sortedList)
+}
+
+module.exports = {
+    doInitSort,
+    doSort,
+}
+
+},{"./datamanager.js":1,"./storage.js":8}],8:[function(require,module,exports){
+const possibleFilters = [
+    'passed',
+    'skipped',
+    'failed',
+    'error',
+    'xfailed',
+    'xpassed',
+    'rerun',
+]
+
+const getVisible = () => {
+    const url = new URL(window.location.href)
+    const settings = new URLSearchParams(url.search).get('visible')
+    const lower = (item) => {
+        const lowerItem = item.toLowerCase()
+        if (possibleFilters.includes(lowerItem)) {
+            return lowerItem
+        }
+        return null
+    }
+    return settings === null ?
+        possibleFilters :
+        [...new Set(settings?.split(',').map(lower).filter((item) => item))]
+}
+
+const hideCategory = (categoryToHide) => {
+    const url = new URL(window.location.href)
+    const visibleParams = new URLSearchParams(url.search).get('visible')
+    const currentVisible = visibleParams ? visibleParams.split(',') : [...possibleFilters]
+    const settings = [...new Set(currentVisible)].filter((f) => f !== categoryToHide).join(',')
+
+    url.searchParams.set('visible', settings)
+    window.history.pushState({}, null, unescape(url.href))
+}
+
+const showCategory = (categoryToShow) => {
+    if (typeof window === 'undefined') {
+        return
+    }
+    const url = new URL(window.location.href)
+    const currentVisible = new URLSearchParams(url.search).get('visible')?.split(',').filter(Boolean) ||
+        [...possibleFilters]
+    const settings = [...new Set([categoryToShow, ...currentVisible])]
+    const noFilter = possibleFilters.length === settings.length || !settings.length
+
+    noFilter ? url.searchParams.delete('visible') : url.searchParams.set('visible', settings.join(','))
+    window.history.pushState({}, null, unescape(url.href))
+}
+
+const getSort = (initialSort) => {
+    const url = new URL(window.location.href)
+    let sort = new URLSearchParams(url.search).get('sort')
+    if (!sort) {
+        sort = initialSort || 'result'
+    }
+    return sort
+}
+
+const setSort = (type) => {
+    const url = new URL(window.location.href)
+    url.searchParams.set('sort', type)
+    window.history.pushState({}, null, unescape(url.href))
+}
+
+const getCollapsedCategory = (renderCollapsed) => {
+    let categories
+    if (typeof window !== 'undefined') {
+        const url = new URL(window.location.href)
+        const collapsedItems = new URLSearchParams(url.search).get('collapsed')
+        switch (true) {
+        case !renderCollapsed && collapsedItems === null:
+            categories = ['passed']
+            break
+        case collapsedItems?.length === 0 || /^["']{2}$/.test(collapsedItems):
+            categories = []
+            break
+        case /^all$/.test(collapsedItems) || collapsedItems === null && /^all$/.test(renderCollapsed):
+            categories = [...possibleFilters]
+            break
+        default:
+            categories = collapsedItems?.split(',').map((item) => item.toLowerCase()) || renderCollapsed
+            break
+        }
+    } else {
+        categories = []
+    }
+    return categories
+}
+
+const getSortDirection = () => JSON.parse(sessionStorage.getItem('sortAsc')) || false
+const setSortDirection = (ascending) => sessionStorage.setItem('sortAsc', ascending)
+
+const getCollapsedIds = () => JSON.parse(sessionStorage.getItem('collapsedIds')) || []
+const setCollapsedIds = (list) => sessionStorage.setItem('collapsedIds', JSON.stringify(list))
+
+module.exports = {
+    getVisible,
+    hideCategory,
+    showCategory,
+    getCollapsedIds,
+    setCollapsedIds,
+    getSort,
+    setSort,
+    getSortDirection,
+    setSortDirection,
+    getCollapsedCategory,
+    possibleFilters,
+}
+
+},{}]},{},[4]);
+    </script>
+  </footer>
+  </body>
+</html>
