@@ -3,3 +3,6 @@ venv/
 __pycache__/
 reporte_qa*.html
 .pytest_cache/
+qa_salida/
+reporte_*.html
+correo.txt

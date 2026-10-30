@@ -1,0 +1,121 @@
+# Ubicación: .github/workflows/qa_diario.yml
+# HUMO DIARIO con tiendas REALES: una consulta por tienda (separadas 3 s) + las pruebas lentas de test_api.py.
+# Corre una vez al día. Los flujos programados solo se ejecutan en la rama por defecto (main).
+name: QA diario (tiendas reales)
+
+on:
+  schedule:
+    - cron: "0 11 * * *"      # 11:00 UTC = 6:00 a. m. en Colombia
+  workflow_dispatch:
+
+jobs:
+  humo:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: write
+
+    env:
+      DB_USER: postgres
+      DB_PASSWORD: ci_password_no_secreta
+      DB_HOST: localhost
+      DB_PORT: "5432"
+      DB_NAME: smartbudget
+      QA_TIENDAS_REALES: "1"
+      MAIL_USERNAME: ${{ secrets.MAIL_USERNAME }}
+
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: ci_password_no_secreta
+          POSTGRES_DB: smartbudget
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+    defaults:
+      run:
+        working-directory: Picksy_Backend
+
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.14"
+          cache: pip
+          cache-dependency-path: |
+            Picksy_Backend/requirements.txt
+            Picksy_Backend/requirements-qa.txt
+      - run: pip install -r requirements.txt -r requirements-qa.txt
+      - name: Crear .env de prueba
+        run: |
+          printf 'DB_USER=postgres\nDB_PASSWORD=ci_password_no_secreta\nDB_HOST=localhost\nDB_PORT=5432\nDB_NAME=smartbudget\n' > .env
+      - run: python preparar_base.py
+
+      - name: Humo de conectores (tiendas reales)
+        id: humo
+        continue-on-error: true
+        run: pytest qa/test_humo_conectores.py -v -p no:cacheprovider --html=reporte_humo.html --self-contained-html
+
+      - name: Pruebas lentas de test_api.py (tiendas reales)
+        id: lentas
+        continue-on-error: true
+        run: pytest test_api.py -v -m slow -p no:cacheprovider --html=reporte_lentas.html --self-contained-html
+
+      - name: Resumen y resultado
+        id: res
+        if: ${{ always() }}
+        run: |
+          if [ -f qa_salida/resumen.md ]; then cat qa_salida/resumen.md >> "$GITHUB_STEP_SUMMARY"; fi
+          if [ "${{ steps.humo.outcome }}" = "success" ] && [ "${{ steps.lentas.outcome }}" = "success" ]; then
+            echo "estado=PASARON" >> "$GITHUB_OUTPUT"; echo "icono=✅" >> "$GITHUB_OUTPUT"; echo "otros=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "estado=TIENEN FALLOS" >> "$GITHUB_OUTPUT"; echo "icono=❌" >> "$GITHUB_OUTPUT"; echo "otros=true" >> "$GITHUB_OUTPUT"
+          fi
+          {
+            echo "Prueba diaria con tiendas REALES."
+            echo "Humo de conectores: ${{ steps.humo.outcome }} · Pruebas lentas de test_api.py: ${{ steps.lentas.outcome }}"
+            echo "Detalle: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+            echo
+            if [ -f qa_salida/resumen.md ]; then cat qa_salida/resumen.md; fi
+          } > correo.txt
+
+      - name: Guardar registro permanente (rama qa-registros)
+        if: ${{ always() }}
+        continue-on-error: true
+        env:
+          REMOTE_URL: https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git
+          OTROS_FALLARON: ${{ steps.res.outputs.otros }}
+        run: bash qa/guardar_registro.sh
+
+      - uses: actions/upload-artifact@v4
+        if: ${{ always() }}
+        with:
+          name: reportes-qa-diario
+          path: |
+            Picksy_Backend/reporte_*.html
+            Picksy_Backend/qa_salida/
+          if-no-files-found: ignore
+          retention-days: 90
+
+      # Solo avisa por correo cuando algo falla: así el correo diario no se vuelve ruido.
+      - name: Enviar correo si hay fallos
+        if: ${{ always() && env.MAIL_USERNAME != '' && steps.res.outputs.estado == 'TIENEN FALLOS' }}
+        uses: dawidd6/action-send-mail@v18
+        with:
+          server_address: smtp.gmail.com
+          server_port: 465
+          secure: true
+          username: ${{ secrets.MAIL_USERNAME }}
+          password: ${{ secrets.MAIL_PASSWORD }}
+          to: ${{ secrets.MAIL_TO }}
+          from: "Picksy QA <${{ secrets.MAIL_USERNAME }}>"
+          subject: "❌ Picksy QA diario: una tienda real falló"
+          body: file://Picksy_Backend/correo.txt
+          attachments: Picksy_Backend/reporte_*.html

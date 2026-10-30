@@ -1,0 +1,137 @@
+{
+  "DELETE /historial": {
+    "cuerpo": null,
+    "parametros": {},
+    "respuestas": [
+      "200"
+    ]
+  },
+  "DELETE /historial/{busqueda_id}": {
+    "cuerpo": null,
+    "parametros": {
+      "path:busqueda_id": {
+        "obligatorio": true,
+        "type": "integer"
+      }
+    },
+    "respuestas": [
+      "200",
+      "422"
+    ]
+  },
+  "GET /": {
+    "cuerpo": null,
+    "parametros": {},
+    "respuestas": [
+      "200"
+    ]
+  },
+  "GET /auth/me": {
+    "cuerpo": null,
+    "parametros": {},
+    "respuestas": [
+      "200"
+    ]
+  },
+  "GET /buscar": {
+    "cuerpo": null,
+    "parametros": {
+      "query:actualizar": {
+        "default": false,
+        "obligatorio": false,
+        "type": "boolean"
+      },
+      "query:presupuesto": {
+        "exclusiveMinimum": 0,
+        "obligatorio": true,
+        "type": "number"
+      },
+      "query:producto": {
+        "maxLength": 100,
+        "minLength": 2,
+        "obligatorio": true,
+        "type": "string"
+      },
+      "query:tiendas": {
+        "anyOf": [
+          "null",
+          "string"
+        ],
+        "obligatorio": false
+      }
+    },
+    "respuestas": [
+      "200",
+      "422"
+    ]
+  },
+  "GET /historial": {
+    "cuerpo": null,
+    "parametros": {},
+    "respuestas": [
+      "200"
+    ]
+  },
+  "GET /tiendas": {
+    "cuerpo": null,
+    "parametros": {},
+    "respuestas": [
+      "200"
+    ]
+  },
+  "POST /auth/login": {
+    "cuerpo": {
+      "campos": {
+        "contrasena": {
+          "type": "string"
+        },
+        "correo": {
+          "format": "email",
+          "type": "string"
+        }
+      },
+      "obligatorios": [
+        "contrasena",
+        "correo"
+      ],
+      "type": "object"
+    },
+    "parametros": {},
+    "respuestas": [
+      "200",
+      "422"
+    ]
+  },
+  "POST /auth/logout": {
+    "cuerpo": null,
+    "parametros": {},
+    "respuestas": [
+      "200"
+    ]
+  },
+  "POST /auth/registro": {
+    "cuerpo": {
+      "campos": {
+        "contrasena": {
+          "maxLength": 50,
+          "minLength": 8,
+          "type": "string"
+        },
+        "correo": {
+          "format": "email",
+          "type": "string"
+        }
+      },
+      "obligatorios": [
+        "contrasena",
+        "correo"
+      ],
+      "type": "object"
+    },
+    "parametros": {},
+    "respuestas": [
+      "201",
+      "422"
+    ]
+  }
+}

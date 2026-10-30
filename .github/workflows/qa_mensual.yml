@@ -1,0 +1,73 @@
+# Ubicación: .github/workflows/qa_mensual.yml
+# INFORME MENSUAL: junta todas las ejecuciones del mes (historial_qa.csv) en un solo documento.
+# Corre los días 28 a 31 y solo actúa si mañana es día 1 (o sea, el último día del mes).
+# También se puede lanzar a mano con el botón "Run workflow" y un mes (AAAA-MM).
+name: QA informe mensual
+
+on:
+  schedule:
+    - cron: "0 12 28-31 * *"
+  workflow_dispatch:
+    inputs:
+      mes:
+        description: "Mes del informe (AAAA-MM). Vacío = mes actual."
+        required: false
+
+jobs:
+  informe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write
+    steps:
+      - name: Decidir si hoy toca
+        id: toca
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ] || [ "$(date -d tomorrow +%d)" = "01" ]; then
+            echo "si=1" >> "$GITHUB_OUTPUT"
+            MES="${{ github.event.inputs.mes }}"; [ -z "$MES" ] && MES="$(date -d '5 hours ago' +%Y-%m)"
+            echo "mes=$MES" >> "$GITHUB_OUTPUT"
+          else
+            echo "si=0" >> "$GITHUB_OUTPUT"
+          fi
+
+      - uses: actions/checkout@v5
+        if: steps.toca.outputs.si == '1'
+
+      - name: Verificar que existe la rama qa-registros
+        if: steps.toca.outputs.si == '1'
+        id: rama
+        run: |
+          if git ls-remote --exit-code --heads origin qa-registros >/dev/null 2>&1; then echo "existe=1" >> "$GITHUB_OUTPUT"; else echo "existe=0" >> "$GITHUB_OUTPUT"; fi
+
+      - uses: actions/checkout@v5
+        if: steps.toca.outputs.si == '1' && steps.rama.outputs.existe == '1'
+        with:
+          ref: qa-registros
+          path: registros
+
+      - name: Generar el informe
+        if: steps.toca.outputs.si == '1' && steps.rama.outputs.existe == '1'
+        run: |
+          python3 Picksy_Backend/qa/informe_mensual.py \
+            --historial registros/docs/qa/historial_qa.csv \
+            --mes "${{ steps.toca.outputs.mes }}" \
+            --destino registros/docs/qa/informes
+          cat "registros/docs/qa/informes/${{ steps.toca.outputs.mes }}_informe.md" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Guardar el informe en la rama qa-registros
+        if: steps.toca.outputs.si == '1' && steps.rama.outputs.existe == '1'
+        working-directory: registros
+        run: |
+          git config user.name "QA Bot Picksy"
+          git config user.email "qa-bot@users.noreply.github.com"
+          git add docs/qa/informes
+          git diff --cached --quiet || git commit -m "QA: informe mensual ${{ steps.toca.outputs.mes }}"
+          for i in 1 2 3; do git push && break || { git pull --rebase; sleep 3; }; done
+
+      - uses: actions/upload-artifact@v4
+        if: steps.toca.outputs.si == '1' && steps.rama.outputs.existe == '1'
+        with:
+          name: informe-mensual-${{ steps.toca.outputs.mes }}
+          path: registros/docs/qa/informes/${{ steps.toca.outputs.mes }}_informe.md
+          retention-days: 400

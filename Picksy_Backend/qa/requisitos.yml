@@ -1,0 +1,70 @@
+# =====================================================================
+# requisitos.yml  -  FUENTE DE VERDAD de QA (sale del ERS v1.0)
+# Lo mantiene el ingeniero de QA. Si el ERS agrega RF-18, se agrega aquí
+# y el bot avisa "REQUISITO SIN PRUEBA" hasta que alguien escriba su caso.
+#
+# Campos:
+#   id            identificador del ERS
+#   titulo        resumen corto
+#   prioridad     Alta / Media (RF) o "-" (RNF, el ERS no la define)
+#   implementado  false = la v1 no tiene ese código (se verifica en el contrato)
+#   bloqueado_por ambigüedades del ERS (A-xx) que impiden definir el oráculo
+#   metodo_manual true = no se puede automatizar del todo (usabilidad, legal...)
+# =====================================================================
+version_ers: "1.0"
+
+tiendas_ers:            # RF-04 y sección 2.1 del ERS: las 10 tiendas del alcance
+  - Mercado Libre
+  - Alkosto
+  - Homecenter
+  - Éxito
+  - Falabella
+  - Ktronix
+  - Farmatodo
+  - Alkomprar
+  - Olímpica
+  - Buscalibre
+
+requisitos:
+  - {id: RF-01, titulo: Registro con correo y contraseña, prioridad: Alta}
+  - {id: RF-02, titulo: Inicio y cierre de sesión seguros, prioridad: Alta}
+  - {id: RF-03, titulo: Sesión activa que expira de forma controlada, prioridad: Media}
+  - {id: RF-04, titulo: Precio, envío y disponibilidad de las 10 tiendas, prioridad: Alta}
+  - {id: RF-05, titulo: Caché con vigencia y fecha de actualización, prioridad: Alta}
+  - {id: RF-06, titulo: Tienda caída - avisa y continúa con las demás, prioridad: Alta}
+  - {id: RF-07, titulo: Entrada de producto y presupuesto máximo, prioridad: Alta}
+  - {id: RF-08, titulo: Total = precio + envío, prioridad: Alta}
+  - {id: RF-09, titulo: Descarta opciones sobre el presupuesto, prioridad: Alta}
+  - {id: RF-10, titulo: Ordena viables por total ascendente, prioridad: Alta}
+  - {id: RF-11, titulo: Mejor opción y ahorro, prioridad: Alta, bloqueado_por: [A-02]}
+  - {id: RF-12, titulo: Enlace a la tienda original, prioridad: Alta}
+  - id: RF-13
+    titulo: Lista de productos con prioridad
+    prioridad: Alta
+    implementado: false
+    bloqueado_por: [A-03]
+    nota: "Sin ruta en /openapi.json ni pantalla en v1 (revisado 28-oct-2026)."
+  - id: RF-14
+    titulo: Mochila 0/1
+    prioridad: Alta
+    implementado: false
+    nota: "Sin ruta ni pantalla en v1. El oráculo (fuerza bruta) ya está en qa/referencia_mochila.py."
+  - {id: RF-15, titulo: Guarda las búsquedas del usuario, prioridad: Media}
+  - id: RF-16
+    titulo: Variación de precios en el tiempo
+    prioridad: Media
+    implementado: false
+    nota: "La tabla precios guarda las fotos, pero no hay ruta que las exponga en v1."
+  - id: RF-17
+    titulo: Comparar carritos
+    prioridad: Media
+    implementado: false
+    nota: "Hay tablas carritos y carrito_items, pero ninguna ruta en v1."
+  - {id: RNF-01, titulo: Búsqueda en menos de 5 s con caché, prioridad: "-"}
+  - {id: RNF-02, titulo: "Hash bcrypt, HTTPS y consultas parametrizadas", prioridad: "-"}
+  - {id: RNF-03, titulo: Usabilidad - flujo en pocos pasos, prioridad: "-", metodo_manual: true}
+  - {id: RNF-04, titulo: Compatibilidad con navegadores y responsivo, prioridad: "-", metodo_manual: true}
+  - {id: RNF-05, titulo: La caída de una tienda no deja el sistema fuera de servicio, prioridad: "-"}
+  - {id: RNF-06, titulo: Subsistemas independientes, prioridad: "-", metodo_manual: true}
+  - {id: RNF-07, titulo: Ley 1581 y términos de uso de las tiendas, prioridad: "-", metodo_manual: true}
+  - {id: RNF-08, titulo: Fecha y hora de actualización en cada precio, prioridad: "-"}
