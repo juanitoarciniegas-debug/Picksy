@@ -90,3 +90,55 @@ def test_cp05_5_tiendas_sin_resultados_tampoco_se_vuelven_a_consultar(client, ti
     n = len(tiendas.llamadas)
     buscar_ok(client, termino, PRESUPUESTO)
     assert len(tiendas.llamadas) == n, f"La repetición consultó {len(tiendas.llamadas) - n} tiendas de nuevo"
+
+
+# ----------------------------------------------------------------------------- v2: caché de resultados vacíos
+# (DEF-05 corregido: una tienda que responde "0 resultados" se guarda 30 min, no 24 h). Se omiten en la v1.
+import cache as _cache  # noqa: E402
+
+CON_VACIO = hasattr(_cache, "MINUTOS_CACHE_VACIO")
+SOLO_V2 = pytest.mark.skipif(not CON_VACIO, reason="OMITIDA: esta versión aún no guarda resultados vacíos (DEF-05)")
+
+
+def _envejecer_minutos(termino, minutos):
+    consulta_db("UPDATE cache_busquedas SET consultado_en = NOW() - make_interval(mins => %s) "
+                "WHERE termino = %s", (minutos, cache.normalizar(termino)))
+
+
+@SOLO_V2
+def test_cp05_6_vigencia_de_resultados_vacios_es_de_30_minutos():
+    assert _cache.MINUTOS_CACHE_VACIO == 30
+
+
+@SOLO_V2
+def test_cp05_7_tienda_sin_resultados_no_se_reconsulta_dentro_de_30_minutos(client, tiendas, termino):
+    tiendas.poner("Éxito", producto("Éxito", "TV", 300_000))          # las otras 8 no lo tienen
+    buscar_ok(client, termino, PRESUPUESTO)
+    n = len(tiendas.llamadas)
+    _envejecer_minutos(termino, 29)
+    buscar_ok(client, termino, PRESUPUESTO)
+    assert len(tiendas.llamadas) == n
+
+
+@SOLO_V2
+def test_cp05_8_pasados_30_minutos_la_tienda_sin_resultados_se_vuelve_a_consultar(client, tiendas, termino):
+    tiendas.poner("Éxito", producto("Éxito", "TV", 300_000))
+    buscar_ok(client, termino, PRESUPUESTO)
+    n = len(tiendas.llamadas)
+    _envejecer_minutos(termino, 31)
+    buscar_ok(client, termino, PRESUPUESTO)
+    consultadas = [t for t, _ in tiendas.llamadas[n:]]
+    assert len(consultadas) == len(tiendas.nombres) - 1, "Deben reconsultarse las 8 tiendas que no tenían el producto"
+    assert "Éxito" not in consultadas, "Éxito sí tenía resultados: sigue vigente 24 h"
+
+
+@SOLO_V2
+def test_cp05_9_una_tienda_que_FALLA_no_se_guarda_como_vacia(client, tiendas, termino):
+    """Un error de la tienda (caída, bloqueo) no debe quedar en caché como 'sin resultados' durante 30 minutos."""
+    for i, nombre in enumerate(tiendas.nombres):
+        tiendas.poner(nombre, producto(nombre, "TV", 300_000 + i))
+    tiendas.hacer_fallar("Alkosto")
+    buscar_ok(client, termino, PRESUPUESTO)
+    buscar_ok(client, termino, PRESUPUESTO)
+    veces = sum(1 for t, _ in tiendas.llamadas if t == "Alkosto")
+    assert veces == 2, "Alkosto falló: la segunda búsqueda debe volver a intentarlo"

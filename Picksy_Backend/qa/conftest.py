@@ -85,16 +85,23 @@ def guardia_y_limpieza():
 
 
 def _limpiar():
-    """Borra SOLO lo que crean las pruebas: usuarios qa_*, caché 'qa *' y productos de https://qa.test/"""
+    """Borra SOLO lo que crean las pruebas: usuarios qa_*, caché 'qa *' y productos de https://qa.test/
+    Cada borrado va por separado: si una tabla no existe (p. ej. login_pendientes en la v1) los demás siguen."""
     from ayudas import consulta_db
-    try:
-        consulta_db("DELETE FROM historial_busquedas WHERE usuario_id IN "
-                    "(SELECT id FROM usuarios WHERE correo LIKE %s)", ("qa\\_%@test.com",))
-        consulta_db("DELETE FROM usuarios WHERE correo LIKE %s", ("qa\\_%@test.com",))
-        consulta_db("DELETE FROM cache_busquedas WHERE termino LIKE %s", ("qa %",))
-        consulta_db("DELETE FROM productos WHERE url LIKE %s", ("https://qa.test/%",))
-    except Exception as error:  # noqa: BLE001
-        print("Limpieza de datos de prueba no realizada:", error)
+    patron = ("qa\\_%@test.com",)
+    pasos = [
+        ("DELETE FROM login_pendientes WHERE usuario_id IN (SELECT id FROM usuarios WHERE correo LIKE %s)", patron),
+        ("DELETE FROM historial_busquedas WHERE usuario_id IN (SELECT id FROM usuarios WHERE correo LIKE %s)", patron),
+        ("DELETE FROM usuarios WHERE correo LIKE %s", patron),
+        ("DELETE FROM cache_busquedas WHERE termino LIKE %s", ("qa %",)),
+        ("DELETE FROM productos WHERE url LIKE %s", ("https://qa.test/%",)),
+    ]
+    for sql, params in pasos:
+        try:
+            consulta_db(sql, params)
+        except Exception as error:  # noqa: BLE001
+            if "login_pendientes" not in sql:      # en la v1 esa tabla no existe: es lo esperado
+                print("Limpieza de datos de prueba no realizada:", str(error).splitlines()[0])
 
 
 @pytest.fixture(scope="session")
@@ -163,7 +170,7 @@ def pytest_runtest_makereport(item, call):
         "estado": estado,
         "categoria": _categoria(estado, marcas, razon),
         "defecto": defecto.group(0) if defecto else None,
-        "motivo": (razon or "")[:300],
+        "motivo": (razon or "")[:600],
         "duracion_s": round(rep.duration, 3),
     })
 
@@ -196,6 +203,10 @@ def _estado_requisito(rid):
     return "Verificado (automático)", casos
 
 
+def _etiqueta(rid, estado):
+    return f"{estado} [propuesto, sin aprobar en el ERS]" if REQ_POR_ID[rid].get("propuesto") else estado
+
+
 def _commit():
     if os.getenv("GITHUB_SHA"):
         return os.environ["GITHUB_SHA"]
@@ -212,9 +223,14 @@ def pytest_sessionfinish(session, exitstatus):
     SALIDA.mkdir(parents=True, exist_ok=True)
     cuenta = lambda e: sum(1 for r in _resultados if r["estado"] == e)  # noqa: E731
     estados = {rid: _estado_requisito(rid) for rid in REQ_POR_ID}
-    cubiertos = [rid for rid, (_, casos) in estados.items()
-                 if any(c["estado"] in EJECUTADOS for c in casos)]
-    sin_prueba = [rid for rid, (e, _) in estados.items() if e in ("Sin prueba", "Revisión manual pendiente")]
+    # Los requisitos "propuestos" (funciones que existen pero el ERS no aprobó) se muestran aparte
+    # y NO cuentan en "X de 25": esa cifra se mide solo contra el ERS aprobado.
+    oficiales = [rid for rid in estados if not REQ_POR_ID[rid].get("propuesto")]
+    propuestos = [rid for rid in estados if REQ_POR_ID[rid].get("propuesto")]
+    cubiertos = [rid for rid in oficiales
+                 if any(c["estado"] in EJECUTADOS for c in estados[rid][1])]
+    sin_prueba = [rid for rid, (e, _) in estados.items()
+                  if e in ("Sin prueba", "Revisión manual pendiente") and rid in oficiales]
     defectos = sorted({r["defecto"] for r in _resultados if r["estado"] == "xfailed" and r["defecto"]})
     ahora = datetime.now(timezone.utc)
 
@@ -240,8 +256,9 @@ def pytest_sessionfinish(session, exitstatus):
         "defectos_abiertos": len(defectos),
         "defectos": defectos,
         "req_cubiertos": len(cubiertos),
-        "req_totales": len(REQ_POR_ID),
-        "requisitos": {rid: e for rid, (e, _) in estados.items()},
+        "req_totales": len(oficiales),
+        "req_propuestos": propuestos,
+        "requisitos": {rid: _etiqueta(rid, e) for rid, (e, _) in estados.items()},
         "requisitos_sin_prueba": sin_prueba,
         "casos": _resultados,
     }
@@ -255,7 +272,8 @@ def _resumen_md(d, estados):
     L.append(f"**{d['pasaron']} pasaron · {d['fallaron']} fallaron · {d['xfail']} defectos conocidos · "
              f"{d['omitidas']} omitidas · {d['xpass']} posiblemente corregidos** (de {d['total']} casos)")
     L.append("")
-    L.append(f"Requisitos con prueba ejecutada: **{d['req_cubiertos']} de {d['req_totales']}** · "
+    extra = f" (+{len(d['req_propuestos'])} propuesto)" if d.get("req_propuestos") else ""
+    L.append(f"Requisitos con prueba ejecutada: **{d['req_cubiertos']} de {d['req_totales']}**{extra} · "
              f"Tiendas reales: {d['tiendas_reales']} · Commit `{d['commit'][:7]}`")
     L.append("")
     bloques = [
@@ -272,14 +290,14 @@ def _resumen_md(d, estados):
             L += [f"### {titulo}", ""]
             for c in casos:
                 extra = f" ({c['defecto']})" if c["defecto"] else ""
-                L.append(f"- `{c['caso']}`{extra} - {c['motivo'][:160]}")
+                L.append(f"- `{c['caso']}`{extra} - {c['motivo'][:400]}")
             L.append("")
     if d["requisitos_sin_prueba"]:
         L += ["### 📋 Requisitos sin prueba", "",
               ", ".join(d["requisitos_sin_prueba"]), ""]
     L += ["### Estado por requisito", "", "| Requisito | Estado | Casos |", "|---|---|---|"]
     for rid, (estado, casos) in estados.items():
-        L.append(f"| {rid} | {estado} | {len(casos)} |")
+        L.append(f"| {rid} | {_etiqueta(rid, estado)} | {len(casos)} |")
     return "\n".join(L) + "\n"
 
 
@@ -290,7 +308,7 @@ def _matriz_md(d, estados):
     for rid, (estado, casos) in estados.items():
         r = REQ_POR_ID[rid]
         nombres = "<br>".join(f"{c['caso'].split('::')[-1]} ({c['estado']})" for c in casos) or "-"
-        L.append(f"| {rid} | {r.get('prioridad', '-')} | {r['titulo']} | {estado} | {nombres} |")
+        L.append(f"| {rid} | {r.get('prioridad', '-')} | {r['titulo']} | {_etiqueta(rid, estado)} | {nombres} |")
     return "\n".join(L) + "\n"
 
 

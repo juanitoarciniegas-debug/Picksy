@@ -10,6 +10,7 @@
 #   implementado  false = la v1 no tiene ese código (se verifica en el contrato)
 #   bloqueado_por ambigüedades del ERS (A-xx) que impiden definir el oráculo
 #   metodo_manual true = no se puede automatizar del todo (usabilidad, legal...)
+#   propuesto     true = función que existe en el código pero NO está en el ERS: QA la prueba, pero no cuenta en 'X de 25'
 #   pendiente     parte del requisito que el bot NO verifica: el estado sale como 'Parcial', no 'Verificado'
 # =====================================================================
 version_ers: "1.0"
@@ -69,3 +70,8 @@ requisitos:
   - {id: RNF-06, titulo: Subsistemas independientes, prioridad: "-", metodo_manual: true}
   - {id: RNF-07, titulo: Ley 1581 y términos de uso de las tiendas, prioridad: "-", metodo_manual: true}
   - {id: RNF-08, titulo: Fecha y hora de actualización en cada precio, prioridad: "-", pendiente: "que la pantalla muestre la fecha (Playwright, fase 3)"}
+  - id: RF-18
+    titulo: "Verificación en dos pasos (2FA) con TOTP - PROPUESTO por QA"
+    prioridad: "-"
+    propuesto: true
+    nota: "Llegó en la v2 sin ID de requisito (el ERS sección 11 exige uno). Requerimientos debe aprobarlo, rechazarlo o pedir que se retire."

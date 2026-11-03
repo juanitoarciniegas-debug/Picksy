@@ -239,3 +239,46 @@ def test_rnf08_1_cada_precio_indica_fecha_y_hora_de_actualizacion(client, cinco_
     for o in data["viables"] + data["descartadas"]:
         fecha = datetime.fromisoformat(o["actualizado_en"])
         assert fecha.tzinfo is not None, "La fecha debe llevar zona horaria"
+
+
+# ----------------------------------------------------------------------------- v2: límites nuevos
+# Estas pruebas se omiten solas en la v1 y corren cuando la API trae las correcciones de DEF-03 y DEF-04.
+import busqueda as _busqueda  # noqa: E402
+
+ES_V2 = hasattr(_busqueda, "PRESUPUESTO_MAXIMO")
+SOLO_V2 = pytest.mark.skipif(not ES_V2, reason="OMITIDA: esta versión de la API aún no trae las correcciones de DEF-03/DEF-04")
+
+
+@SOLO_V2
+@pytest.mark.req("RF-07")
+def test_cp07_5_presupuesto_justo_en_el_maximo_se_acepta(client, tiendas, termino):
+    assert buscar(client, termino, _busqueda.PRESUPUESTO_MAXIMO).status_code == 200
+
+
+@SOLO_V2
+@pytest.mark.req("RF-07")
+@pytest.mark.parametrize("valor", ["{max_mas_uno}", "inf", "-inf", "nan", "1e308", "1e999"])
+def test_cp07_6_presupuesto_sobre_el_maximo_o_no_finito_se_rechaza(client, tiendas, termino, valor):
+    valor = valor.format(max_mas_uno=_busqueda.PRESUPUESTO_MAXIMO + 1)
+    r = buscar(client, termino, valor)
+    assert r.status_code == 422, f"{valor} -> {r.status_code}"
+    assert tiendas.llamadas == []
+
+
+@SOLO_V2
+@pytest.mark.req("RF-07")
+@pytest.mark.parametrize("texto", [" a ", "\t\n ", "   ", " \u00a0 "])
+def test_cp07_7_producto_sin_2_caracteres_utiles_se_rechaza(client, tiendas, texto):
+    assert buscar(client, texto, 500_000).status_code == 422
+    assert tiendas.llamadas_a("") == [] and tiendas.llamadas == []
+
+
+@SOLO_V2
+@pytest.mark.req("RF-07")
+def test_cp07_8_los_espacios_repetidos_se_normalizan(client, tiendas, termino):
+    """'qa  abc   def ' llega a las tiendas y a la respuesta como 'qa abc def' (una sola caché para todas las variantes)."""
+    sucio = "  " + termino.replace(" ", "   ") + "  x  "
+    data = buscar_ok(client, sucio, 500_000)
+    esperado = " ".join(sucio.split())
+    assert data["producto"] == esperado
+    assert {t for _, t in tiendas.llamadas} == {esperado}

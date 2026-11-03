@@ -19,7 +19,7 @@ def test_el_ers_define_diez_tiendas():
     assert len(REQUISITOS["tiendas_ers"]) == 10
 
 
-CLAVES_PERMITIDAS = {"id", "titulo", "prioridad", "implementado", "bloqueado_por", "metodo_manual", "nota", "pendiente"}
+CLAVES_PERMITIDAS = {"id", "titulo", "prioridad", "implementado", "bloqueado_por", "metodo_manual", "nota", "pendiente", "propuesto"}
 
 
 def test_ningun_requisito_tiene_claves_inesperadas():
