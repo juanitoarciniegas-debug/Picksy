@@ -7,6 +7,9 @@ from conectores.base import Producto
 from database import engine
 
 HORAS_CACHE = 24
+# CAMBIO (QA DEF-05): una tienda que respondió "0 resultados" también se guarda, pero solo por poco tiempo
+# (así se evita consultarla en cada búsqueda repetida y, a la vez, se vuelve a intentar pronto).
+MINUTOS_CACHE_VACIO = 30
 
 
 def normalizar(termino: str) -> str:
@@ -31,10 +34,6 @@ def leer_cache(termino: str, tienda: str, solo_vigente: bool = True):
         if fila is None:
             return None
 
-        limite = datetime.now(timezone.utc) - timedelta(hours=HORAS_CACHE)
-        if solo_vigente and fila.consultado_en < limite:
-            return None
-
         filas = conn.execute(
             text("""
                 SELECT t.nombre AS tienda, p.nombre, p.url, p.imagen_url,
@@ -51,6 +50,11 @@ def leer_cache(termino: str, tienda: str, solo_vigente: bool = True):
             """),
             {"cid": fila.id},
         ).all()
+
+        # CAMBIO (QA DEF-05): si la consulta guardada no tenía resultados, vence antes (30 min).
+        vigencia = timedelta(hours=HORAS_CACHE) if filas else timedelta(minutes=MINUTOS_CACHE_VACIO)
+        if solo_vigente and fila.consultado_en < datetime.now(timezone.utc) - vigencia:
+            return None
 
     return [
         Producto(

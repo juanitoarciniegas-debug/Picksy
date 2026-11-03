@@ -1,6 +1,6 @@
-
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -11,6 +11,7 @@
   <script src="js/api.js" defer></script>
   <script src="js/login.js" defer></script>
 </head>
+
 <body class="login-body">
   <main class="login-layout">
 
@@ -18,8 +19,8 @@
       <a class="brand brand-on-dark" href="index.html">
         <span class="brand-mark" aria-hidden="true">
           <svg viewBox="0 0 48 48">
-            <path d="M39 7C20 7 8 15 8 29c0 7 5 12 12 12C34 41 40 24 39 7Z" fill="currentColor"/>
-            <path d="M10 39C17 28 23 22 33 15" fill="none" stroke="#F5F4D0" stroke-width="3" stroke-linecap="round"/>
+            <path d="M39 7C20 7 8 15 8 29c0 7 5 12 12 12C34 41 40 24 39 7Z" fill="currentColor" />
+            <path d="M10 39C17 28 23 22 33 15" fill="none" stroke="#F5F4D0" stroke-width="3" stroke-linecap="round" />
           </svg>
         </span>
         <span>picksy</span>
@@ -54,37 +55,19 @@
 
         <form id="loginForm" class="auth-form" novalidate>
           <label for="email">Correo electrónico</label>
-          <input
-            id="email"
-            name="email"
-            type="email"
-            placeholder="tunombre@correo.com"
-            autocomplete="email"
-            required
-          >
+          <input id="email" name="email" type="email" placeholder="tunombre@correo.com" autocomplete="email" required>
           <small class="field-error" id="emailError"></small>
 
           <div class="password-label">
             <label for="password">Contraseña</label>
-            <a href="#" id="forgotPassword">¿La olvidaste?</a>
+            <a href="recuperar.html">¿La olvidaste?</a>
           </div>
 
           <div class="password-wrap">
-            <input
-              id="password"
-              name="password"
-              type="password"
-              placeholder="Ingresa tu contraseña"
-              autocomplete="current-password"
-              required
-              minlength="6"
-            >
-            <button
-              class="toggle-password"
-              id="togglePassword"
-              type="button"
-              aria-label="Mostrar contraseña"
-            >Ver</button>
+            <input id="password" name="password" type="password" placeholder="Ingresa tu contraseña"
+              autocomplete="current-password" required minlength="6">
+            <button class="toggle-password" id="togglePassword" type="button"
+              aria-label="Mostrar contraseña">Ver</button>
           </div>
           <small class="field-error" id="passwordError"></small>
 
@@ -121,4 +104,5 @@
 
   </main>
 </body>
+
 </html>
