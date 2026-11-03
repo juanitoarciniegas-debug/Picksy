@@ -20,5 +20,5 @@ uvicorn main:app --reload --port 8000
 Abrir Picksy_Frontend/Picksy_Frontend/Picksy/index.html con Live Server (puerto 5500).
 
 ## Documentación
-- ERS: SmartBudget_ERS_Ingenieria_de_Requerimientos.docx
-- Presentación: SmartBudget_presentacion.pptx.pdf
+- ERS: Picksy_ERS_Ingenieria_de_Requerimientos.docx
+- Presentación: Picksy_presentacion.pptx.pdf
