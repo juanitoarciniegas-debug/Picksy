@@ -7,6 +7,9 @@ from historial import guardar_busqueda, usuario_opcional
 
 router = APIRouter(tags=["Búsqueda"])
 
+# CAMBIO (QA DEF-04): tope razonable para el presupuesto (mil millones de pesos).
+PRESUPUESTO_MAXIMO = 1_000_000_000
+
 
 def _opcion(producto, total: float) -> dict:
     return {
@@ -25,11 +28,18 @@ def _opcion(producto, total: float) -> dict:
 @router.get("/buscar")
 def buscar(
     producto: str = Query(min_length=2, max_length=100, description="Qué quiere comprar"),
-    presupuesto: float = Query(gt=0, description="Presupuesto máximo en COP"),
+    # CAMBIO (QA DEF-04): se rechazan inf y nan (allow_inf_nan=False) y se fija un máximo (le=...).
+    presupuesto: float = Query(gt=0, le=PRESUPUESTO_MAXIMO, allow_inf_nan=False, description="Presupuesto máximo en COP"),
     tiendas: Optional[str] = Query(default=None, description="Tiendas separadas por coma"),
     actualizar: bool = Query(default=False, description="Ignorar la caché y consultar las tiendas ahora"),
     usuario=Depends(usuario_opcional),  # historial: None si no hay sesión
 ):
+    # CAMBIO (QA DEF-03): la validación min_length se hace ANTES de quitar espacios, así que
+    # "   " pasaba. Ahora se limpia primero y se exige un mínimo de 2 letras ya sin espacios.
+    producto = " ".join(producto.split())
+    if len(producto) < 2:
+        raise HTTPException(status_code=422, detail="Escribe al menos 2 caracteres del producto que buscas.")
+
     lista = None
     if tiendas:
         lista = [t.strip() for t in tiendas.split(",") if t.strip()]
@@ -41,7 +51,7 @@ def buscar(
                 detail=f"Tiendas no reconocidas: {desconocidas}. Disponibles: {NOMBRES}",
             )
 
-    productos, avisos = buscar_en_todas(producto.strip(), lista, forzar=actualizar)
+    productos, avisos = buscar_en_todas(producto, lista, forzar=actualizar)
 
     disponibles = [p for p in productos if p.disponible]
     agotados = len(productos) - len(disponibles)
@@ -58,7 +68,7 @@ def buscar(
     ahorro = (viables[-1][1] - viables[0][1]) if viables else None
 
     respuesta = {
-        "producto": producto.strip(),
+        "producto": producto,
         "presupuesto": presupuesto,
         "mejor_opcion": _opcion(*mejor) if mejor else None,
         "ahorro": ahorro,

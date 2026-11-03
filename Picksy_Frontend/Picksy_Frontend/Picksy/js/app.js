@@ -462,6 +462,7 @@ async function cargarSesion() {
     // Por ahora el backend solo guarda el correo; se muestra la parte anterior al "@".
     const nombre = usuario.correo.split("@")[0];
     saludo.textContent = `¡Hola, ${nombre}!`;
+    $("#enlaceSeguridad")?.classList.remove("hidden"); // CAMBIO (2FA): con sesión se ve el enlace a "Seguridad"
     cargarHistorial(); // trae el historial guardado en el backend
     avatar.textContent = nombre.charAt(0).toUpperCase();
     avatar.href = "#";

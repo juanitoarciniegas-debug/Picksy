@@ -418,3 +418,244 @@ a { color: inherit; text-decoration: none; }
 
 .products-empty h3 { margin-top: 0; }
 .products-empty p { max-width: 410px; line-height: 1.7; }
+
+/* Campo de verificación 2FA */
+#authCode {
+    text-align: center;
+    font-size: 23px;
+    letter-spacing: 9px;
+    font-weight: 700;
+}
+
+#authCode:focus {
+    border-color: #8AA16B;
+    box-shadow: 0 0 0 3px rgba(138, 161, 107, 0.12);
+}
+
+#authCode.invalid {
+    border-color: #C65E61;
+}
+
+#recoveryCodeSection {
+    margin-top: 20px;
+}
+
+
+/* ==========================================
+   AUTENTICACIÓN EN DOS PASOS - PICKSY
+========================================== */
+
+.security-page {
+    min-height: 100vh;
+    padding: 45px 22px;
+    align-items: flex-start;
+}
+
+.security-wrap {
+    width: min(620px, 100%);
+    margin: 0 auto;
+}
+
+.security-wrap h2 {
+    color: var(--green);
+    font: 800 32px/1.2 'Manrope', sans-serif;
+    margin: 16px 0 10px;
+}
+
+.security-card {
+    margin-top: 28px;
+    padding: 24px;
+    border: 1px solid var(--line);
+    border-radius: 18px;
+    background: white;
+}
+
+.security-card-heading {
+    display: flex;
+    align-items: center;
+    gap: 13px;
+    margin-bottom: 18px;
+}
+
+.security-icon,
+.authenticator-icon {
+    display: grid;
+    place-items: center;
+    width: 48px;
+    height: 48px;
+    border-radius: 14px;
+    background: var(--green-soft);
+    font-size: 23px;
+}
+
+.security-card-heading h3,
+.security-setup h3,
+.security-recovery h3 {
+    margin: 0 0 5px;
+    color: var(--green);
+    font-size: 17px;
+}
+
+.security-card-heading p {
+    margin: 0;
+    font-size: 12px;
+}
+
+.security-status {
+    margin-left: auto;
+    padding: 7px 10px;
+    border-radius: 20px;
+    background: #F5F0E5;
+    color: #88713E;
+    font-size: 10px;
+    font-weight: 700;
+    white-space: nowrap;
+}
+
+.security-status.active {
+    background: #E5F0DF;
+    color: #527342;
+}
+
+.security-card > p,
+.security-setup > p,
+.security-recovery > p {
+    color: var(--muted);
+    font-size: 13px;
+    line-height: 1.7;
+    margin-bottom: 20px;
+}
+
+.security-setup,
+.security-recovery {
+    margin-top: 22px;
+    padding: 24px;
+    border: 1px solid var(--line);
+    border-radius: 18px;
+    background: white;
+}
+
+.qr-placeholder {
+    width: 190px;
+    height: 190px;
+    margin: 22px auto;
+    border: 2px dashed #B8C5AC;
+    border-radius: 15px;
+    background: #F8F9F3;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    color: var(--green);
+}
+
+.qr-placeholder span {
+    font-size: 38px;
+    font-weight: 800;
+}
+
+.qr-placeholder small {
+    font-size: 10px;
+    color: var(--muted);
+}
+
+.security-help {
+    text-align: center;
+    font-size: 11px !important;
+}
+
+.secret-box {
+    padding: 14px;
+    margin: 18px 0;
+    border-radius: 11px;
+    background: #F6F7F1;
+}
+
+.secret-box label {
+    display: block;
+    color: var(--muted);
+    font-size: 11px;
+    margin-bottom: 8px;
+}
+
+.secret-value {
+    color: var(--green);
+    font-size: 12px;
+    font-weight: 700;
+    overflow-wrap: anywhere;
+}
+
+.security-setup .auth-form input,
+#twoFactorForm input,
+#recoveryCodeForm input {
+    width: 100%;
+    min-height: 49px;
+    border: 1px solid #E1E5DC;
+    border-radius: 11px;
+    background: #FDFDFB;
+    padding: 0 14px;
+    font-size: 15px;
+    letter-spacing: 2px;
+}
+
+.recovery-placeholder {
+    padding: 18px;
+    border: 1px dashed #B8C5AC;
+    border-radius: 12px;
+    background: #F8F9F3;
+    color: var(--muted);
+    font-size: 12px;
+    text-align: center;
+}
+
+.authenticator-icon {
+    width: 64px;
+    height: 64px;
+    margin: 24px auto;
+    font-size: 30px;
+}
+
+#twoFactorForm input {
+    text-align: center;
+    font-size: 23px;
+    letter-spacing: 9px;
+    margin-bottom: 8px;
+}
+
+#twoFactorForm input:focus,
+.security-setup input:focus,
+#recoveryCodeForm input:focus {
+    outline: none;
+    border-color: #8AA16B;
+    box-shadow: 0 0 0 3px rgba(138, 161, 107, .12);
+}
+
+#twoFactorForm input.invalid,
+.security-setup input.invalid {
+    border-color: #C65E61;
+}
+
+[hidden] {
+    display: none !important;
+}
+
+@media (max-width: 620px) {
+    .security-page {
+        padding: 28px 16px;
+    }
+
+    .security-card,
+    .security-setup,
+    .security-recovery {
+        padding: 18px;
+    }
+
+    .security-card-heading {
+        flex-wrap: wrap;
+    }
+
+    .security-status {
+        margin-left: 60px;
+    }
+}

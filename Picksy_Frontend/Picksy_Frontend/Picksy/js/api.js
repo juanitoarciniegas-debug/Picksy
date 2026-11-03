@@ -74,8 +74,34 @@ async function registrar({ nombre, correo, contrasena }) {
 
 async function iniciarSesion(correo, contrasena, recordar = false) {
   const datos = await peticion("/auth/login", { metodo: "POST", cuerpo: { correo, contrasena } });
+  // 2FA: si la cuenta tiene verificación en dos pasos, el servidor todavía NO da la sesión:
+  // responde { requiere_2fa: true, token_2fa }. La pantalla debe pedir el código y llamar a completarLogin2FA().
+  if (datos.requiere_2fa) return datos;
   Almacen.guardar(CLAVE_TOKEN, datos.token, recordar);
   return datos;
+}
+
+// ---------- Verificación en dos pasos (2FA con Google Authenticator) ----------
+// Segundo paso del login: token_2fa (lo dio iniciarSesion) + código de 6 dígitos de la app.
+async function completarLogin2FA(token2fa, codigo, recordar = false) {
+  const datos = await peticion("/auth/2fa/login", { metodo: "POST", cuerpo: { token_2fa: token2fa, codigo } });
+  Almacen.guardar(CLAVE_TOKEN, datos.token, recordar);
+  return datos;
+}
+
+// Genera la clave y el QR (data:image/svg+xml;base64,...) para escanear con la app.
+async function configurar2FA() {
+  return peticion("/auth/2fa/configurar", { metodo: "POST", conToken: true });
+}
+
+// Confirma con un código de la app y deja el 2FA activado.
+async function activar2FA(codigo) {
+  return peticion("/auth/2fa/activar", { metodo: "POST", cuerpo: { codigo }, conToken: true });
+}
+
+// Para desactivar se piden la contraseña y un código vigente.
+async function desactivar2FA(contrasena, codigo) {
+  return peticion("/auth/2fa/desactivar", { metodo: "POST", cuerpo: { contrasena, codigo }, conToken: true });
 }
 
 async function usuarioActual() {
@@ -135,4 +161,5 @@ window.PicksyAPI = {
   registrar, iniciarSesion, usuarioActual, cerrarSesion, hayToken,
   buscarProductos, listarTiendas, ErrorApi,
   listarHistorial, borrarHistorial, borrarBusquedaDelHistorial,
+  completarLogin2FA, configurar2FA, activar2FA, desactivar2FA,
 };

@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Recupera el acceso a tu cuenta de Picksy.">
+    <title>Recuperar contraseña | Picksy</title>
+
+    <link rel="stylesheet" href="css/styles.css">
+    <script src="js/recuperar.js" defer></script>
+</head>
+
+<body class="login-body">
+    <main class="login-layout">
+
+        <section class="login-brand-panel">
+            <a class="brand brand-on-dark" href="index.html">
+                <span class="brand-mark" aria-hidden="true">
+                    <svg viewBox="0 0 48 48">
+                        <path d="M39 7C20 7 8 15 8 29c0 7 5 12 12 12C34 41 40 24 39 7Z"
+                              fill="currentColor"/>
+                        <path d="M10 39C17 28 23 22 33 15"
+                              fill="none" stroke="#F5F4D0"
+                              stroke-width="3" stroke-linecap="round"/>
+                    </svg>
+                </span>
+                <span>picksy</span>
+            </a>
+
+            <div class="login-brand-copy">
+                <span class="eyebrow eyebrow-light">Compra inteligente</span>
+                <h1>Recupera tu acceso.<br><span>Vuelve a ahorrar.</span></h1>
+                <p>
+                    No te preocupes. Te ayudaremos a recuperar el acceso
+                    a tu cuenta de Picksy.
+                </p>
+            </div>
+
+            <span class="panel-note">
+                Pequeñas decisiones. Grandes ahorros.
+            </span>
+        </section>
+
+        <section class="login-form-panel">
+            <div class="login-form-wrap">
+
+                <a class="back-link" href="login.html">
+                    ← Volver al inicio de sesión
+                </a>
+
+                <span class="eyebrow">Recuperación de cuenta</span>
+
+                <h2>¿Olvidaste tu contraseña?</h2>
+
+                <p class="muted">
+                    Escribe el correo electrónico asociado a tu cuenta.
+                    Te enviaremos instrucciones para restablecerla.
+                </p>
+
+                <form id="recoveryForm" class="auth-form" novalidate>
+
+                    <label for="recoveryEmail">
+                        Correo electrónico
+                    </label>
+
+                    <input
+                        type="email"
+                        id="recoveryEmail"
+                        name="email"
+                        placeholder="tunombre@correo.com"
+                        autocomplete="email"
+                        required
+                    >
+
+                    <small class="field-error" id="recoveryEmailError"></small>
+
+                    <button
+                        class="button button-primary button-wide"
+                        type="submit"
+                    >
+                        Enviar instrucciones →
+                    </button>
+
+                    <p
+                        class="form-feedback"
+                        id="recoveryFeedback"
+                        role="status"
+                        aria-live="polite"
+                    ></p>
+
+                </form>
+
+                <p class="signup-note">
+                    ¿Recordaste tu contraseña?
+                    <a href="login.html">Inicia sesión</a>
+                </p>
+
+            </div>
+        </section>
+
+    </main>
+</body>
+</html>
