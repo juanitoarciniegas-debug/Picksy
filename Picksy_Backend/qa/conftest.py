@@ -90,8 +90,11 @@ def _limpiar():
     from ayudas import consulta_db
     patron = ("qa\\_%@test.com",)
     pasos = [
+        # v3: registros que quedaron a medias (se confirman con el código del Authenticator)
+        ("DELETE FROM registros_pendientes WHERE correo LIKE %s", patron),
         ("DELETE FROM login_pendientes WHERE usuario_id IN (SELECT id FROM usuarios WHERE correo LIKE %s)", patron),
         ("DELETE FROM historial_busquedas WHERE usuario_id IN (SELECT id FROM usuarios WHERE correo LIKE %s)", patron),
+        # Al borrar al usuario se van en cascada sus sesiones, carritos, códigos de recuperación y enlaces de clave.
         ("DELETE FROM usuarios WHERE correo LIKE %s", patron),
         ("DELETE FROM cache_busquedas WHERE termino LIKE %s", ("qa %",)),
         ("DELETE FROM productos WHERE url LIKE %s", ("https://qa.test/%",)),
@@ -100,8 +103,21 @@ def _limpiar():
         try:
             consulta_db(sql, params)
         except Exception as error:  # noqa: BLE001
-            if "login_pendientes" not in sql:      # en la v1 esa tabla no existe: es lo esperado
+            if "pendientes" not in sql:            # en la v1 esas tablas no existen: es lo esperado
                 print("Limpieza de datos de prueba no realizada:", str(error).splitlines()[0])
+
+
+@pytest.fixture(autouse=True)
+def limitador_en_cero():
+    """v3: la API limita intentos (429) por correo y por conexión. Las pruebas usan SIEMPRE la misma
+    'conexión', así que sin esto un caso de límite dejaría bloqueados a los demás. Se reinicia antes de cada caso."""
+    try:
+        import limitador
+    except ImportError:          # v1 y v2 no tienen límite de intentos
+        yield
+        return
+    limitador.reiniciar()
+    yield
 
 
 @pytest.fixture(scope="session")
@@ -185,7 +201,7 @@ def _estado_requisito(rid):
     ejecutados = [c for c in casos if c["estado"] in EJECUTADOS]
     if not ejecutados:
         if req.get("implementado") is False:
-            return "No implementado (v1)", casos
+            return "No implementado", casos
         bloqueados = [c for c in casos if c["categoria"] == "BLOQUEADO"]
         if bloqueados or req.get("bloqueado_por"):
             return "Bloqueado (" + ", ".join(req.get("bloqueado_por", [])) + ")", casos
@@ -241,7 +257,7 @@ def pytest_sessionfinish(session, exitstatus):
         "disparador": os.getenv("GITHUB_EVENT_NAME", "local"),
         "commit": _commit(),
         "rama": os.getenv("GITHUB_REF_NAME", "local"),
-        "version_software": os.getenv("QA_VERSION_SW", "v1"),
+        "version_software": os.getenv("QA_VERSION_SW", "v3"),
         "tiendas_reales": "sí" if os.getenv("QA_TIENDAS_REALES") == "1" else "no",
         "duracion_s": round((ahora - _inicio).total_seconds(), 1),
         "enlace_al_run": (f"{os.getenv('GITHUB_SERVER_URL')}/{os.getenv('GITHUB_REPOSITORY')}"

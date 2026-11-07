@@ -4,11 +4,68 @@
 -- =====================================================
 
 -- 1. USUARIOS (RF-01 a RF-03)
+--    CAMBIO (2FA/roles): ahora la tabla trae TODO lo que usa el backend (DEF-06):
+--    - totp_*  : datos de Google Authenticator. Todo usuario nuevo nace con el 2FA ya activado.
+--    - rol     : 'usuario' (normal) o 'admin' (puede ver y eliminar usuarios).
 CREATE TABLE IF NOT EXISTS usuarios (
-    id              SERIAL PRIMARY KEY,
-    correo          VARCHAR(255) NOT NULL UNIQUE,   -- UNIQUE: rechaza correos repetidos
-    contrasena_hash VARCHAR(255) NOT NULL,          -- nunca se guarda la contraseña real
-    creado_en       TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    id               SERIAL PRIMARY KEY,
+    correo           VARCHAR(255) NOT NULL UNIQUE,   -- UNIQUE: rechaza correos repetidos
+    contrasena_hash  VARCHAR(255) NOT NULL,          -- nunca se guarda la contraseña real
+    creado_en        TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    totp_secreto     VARCHAR(64),                    -- clave secreta del Google Authenticator
+    totp_activo      BOOLEAN NOT NULL DEFAULT FALSE,
+    totp_ultimo_paso BIGINT NOT NULL DEFAULT 0,      -- evita reutilizar un mismo código de 6 dígitos
+    rol              VARCHAR(20) NOT NULL DEFAULT 'usuario' CHECK (rol IN ('usuario', 'admin'))
+);
+
+-- Si la tabla "usuarios" ya existía (base creada con una versión anterior), estas líneas agregan lo que falta.
+-- En una base nueva no hacen nada. Se pueden ejecutar todas las veces que haga falta.
+ALTER TABLE usuarios ADD COLUMN IF NOT EXISTS totp_secreto     VARCHAR(64);
+ALTER TABLE usuarios ADD COLUMN IF NOT EXISTS totp_activo      BOOLEAN NOT NULL DEFAULT FALSE;
+ALTER TABLE usuarios ADD COLUMN IF NOT EXISTS totp_ultimo_paso BIGINT NOT NULL DEFAULT 0;
+ALTER TABLE usuarios ADD COLUMN IF NOT EXISTS rol              VARCHAR(20) NOT NULL DEFAULT 'usuario'
+    CHECK (rol IN ('usuario', 'admin'));
+
+-- CAMBIO (seguridad): el secreto del Google Authenticator ahora se guarda CIFRADO (clave TOTP_CLAVE del .env).
+-- Un texto cifrado es más largo que 64 caracteres, por eso se amplía la columna.
+ALTER TABLE usuarios ALTER COLUMN totp_secreto TYPE VARCHAR(255);
+
+-- Inicio de sesión a medias: la contraseña ya fue correcta, falta el código del Google Authenticator.
+CREATE TABLE IF NOT EXISTS login_pendientes (
+    token       VARCHAR(64) PRIMARY KEY,
+    usuario_id  INTEGER NOT NULL REFERENCES usuarios(id) ON DELETE CASCADE,
+    expira_en   TIMESTAMPTZ NOT NULL,
+    intentos    INTEGER NOT NULL DEFAULT 0
+);
+
+-- CAMBIO (2FA): registro a medias. El usuario NO existe en "usuarios" hasta que confirme el código del
+-- Google Authenticator; mientras tanto sus datos esperan aquí (y se borran solos al vencer).
+CREATE TABLE IF NOT EXISTS registros_pendientes (
+    token            VARCHAR(64) PRIMARY KEY,
+    correo           VARCHAR(255) NOT NULL,
+    contrasena_hash  VARCHAR(255) NOT NULL,
+    totp_secreto     VARCHAR(255) NOT NULL,
+    expira_en        TIMESTAMPTZ NOT NULL,
+    intentos         INTEGER NOT NULL DEFAULT 0
+);
+CREATE INDEX IF NOT EXISTS idx_registros_pendientes_correo ON registros_pendientes (correo);
+ALTER TABLE registros_pendientes ALTER COLUMN totp_secreto TYPE VARCHAR(255);
+
+-- CAMBIO (recuperación): códigos de recuperación del 2FA (para quien pierde el teléfono).
+-- Solo se guarda el hash; cada código sirve UNA vez.
+CREATE TABLE IF NOT EXISTS codigos_recuperacion (
+    id           SERIAL PRIMARY KEY,
+    usuario_id   INTEGER NOT NULL REFERENCES usuarios(id) ON DELETE CASCADE,
+    codigo_hash  VARCHAR(64) NOT NULL,
+    usado_en     TIMESTAMPTZ,
+    UNIQUE (usuario_id, codigo_hash)
+);
+
+-- CAMBIO (recuperación): enlaces para restablecer la contraseña (válidos poco tiempo; se guarda solo el hash).
+CREATE TABLE IF NOT EXISTS recuperaciones_clave (
+    token_hash  VARCHAR(64) PRIMARY KEY,
+    usuario_id  INTEGER NOT NULL REFERENCES usuarios(id) ON DELETE CASCADE,
+    expira_en   TIMESTAMPTZ NOT NULL
 );
 
 -- 2. TIENDAS (las 10 del alcance)
@@ -64,6 +121,9 @@ CREATE TABLE IF NOT EXISTS carritos (
     creado_en    TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
+-- CAMBIO (RF-14/RF-17): fecha en que la mochila calculó este carrito (NULL = todavía no se ha optimizado).
+ALTER TABLE carritos ADD COLUMN IF NOT EXISTS optimizado_en TIMESTAMPTZ;
+
 -- 7. ITEMS DEL CARRITO (productos con prioridad)
 CREATE TABLE IF NOT EXISTS carrito_items (
     id               SERIAL PRIMARY KEY,
@@ -74,7 +134,11 @@ CREATE TABLE IF NOT EXISTS carrito_items (
     incluido         BOOLEAN NOT NULL DEFAULT FALSE -- TRUE si la mochila lo dejó dentro
 );
 
--- 8. SESIONES (B-02: login, logout y expiración a 24 h, RF-02 y RF-03)
+-- Un producto no puede estar dos veces en el mismo carrito.
+CREATE UNIQUE INDEX IF NOT EXISTS ux_carrito_items_producto ON carrito_items (carrito_id, producto_id);
+CREATE INDEX IF NOT EXISTS idx_carritos_usuario ON carritos (usuario_id);
+
+-- 8. SESIONES (B-02: login, logout y expiración, RF-02 y RF-03; la duración se configura en el .env)
 CREATE TABLE IF NOT EXISTS sesiones (
     token       VARCHAR(100) PRIMARY KEY,
     usuario_id  INTEGER NOT NULL REFERENCES usuarios(id) ON DELETE CASCADE,

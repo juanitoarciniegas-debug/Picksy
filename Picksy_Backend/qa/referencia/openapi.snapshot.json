@@ -1,12 +1,55 @@
 {
-  "DELETE /historial": {
+  "DELETE /api/v1/admin/usuarios/{usuario_id}": {
+    "cuerpo": null,
+    "parametros": {
+      "path:usuario_id": {
+        "obligatorio": true,
+        "type": "integer"
+      }
+    },
+    "respuestas": [
+      "200",
+      "422"
+    ]
+  },
+  "DELETE /api/v1/carritos/{carrito_id}": {
+    "cuerpo": null,
+    "parametros": {
+      "path:carrito_id": {
+        "obligatorio": true,
+        "type": "integer"
+      }
+    },
+    "respuestas": [
+      "204",
+      "422"
+    ]
+  },
+  "DELETE /api/v1/carritos/{carrito_id}/items/{item_id}": {
+    "cuerpo": null,
+    "parametros": {
+      "path:carrito_id": {
+        "obligatorio": true,
+        "type": "integer"
+      },
+      "path:item_id": {
+        "obligatorio": true,
+        "type": "integer"
+      }
+    },
+    "respuestas": [
+      "204",
+      "422"
+    ]
+  },
+  "DELETE /api/v1/historial": {
     "cuerpo": null,
     "parametros": {},
     "respuestas": [
       "200"
     ]
   },
-  "DELETE /historial/{busqueda_id}": {
+  "DELETE /api/v1/historial/{busqueda_id}": {
     "cuerpo": null,
     "parametros": {
       "path:busqueda_id": {
@@ -26,14 +69,21 @@
       "200"
     ]
   },
-  "GET /auth/me": {
+  "GET /api/v1/admin/usuarios": {
     "cuerpo": null,
     "parametros": {},
     "respuestas": [
       "200"
     ]
   },
-  "GET /buscar": {
+  "GET /api/v1/auth/me": {
+    "cuerpo": null,
+    "parametros": {},
+    "respuestas": [
+      "200"
+    ]
+  },
+  "GET /api/v1/buscar": {
     "cuerpo": null,
     "parametros": {
       "query:actualizar": {
@@ -43,6 +93,7 @@
       },
       "query:presupuesto": {
         "exclusiveMinimum": 0,
+        "maximum": 1000000000,
         "obligatorio": true,
         "type": "number"
       },
@@ -65,21 +116,268 @@
       "422"
     ]
   },
-  "GET /historial": {
+  "GET /api/v1/carritos": {
     "cuerpo": null,
     "parametros": {},
     "respuestas": [
       "200"
     ]
   },
-  "GET /tiendas": {
+  "GET /api/v1/carritos/comparar": {
+    "cuerpo": null,
+    "parametros": {
+      "query:a": {
+        "obligatorio": true,
+        "type": "integer"
+      },
+      "query:b": {
+        "obligatorio": true,
+        "type": "integer"
+      }
+    },
+    "respuestas": [
+      "200",
+      "422"
+    ]
+  },
+  "GET /api/v1/carritos/{carrito_id}": {
+    "cuerpo": null,
+    "parametros": {
+      "path:carrito_id": {
+        "obligatorio": true,
+        "type": "integer"
+      }
+    },
+    "respuestas": [
+      "200",
+      "422"
+    ]
+  },
+  "GET /api/v1/historial": {
+    "cuerpo": null,
+    "parametros": {
+      "query:limite": {
+        "default": 20,
+        "maximum": 100,
+        "minimum": 1,
+        "obligatorio": false,
+        "type": "integer"
+      },
+      "query:pagina": {
+        "default": 1,
+        "maximum": 100000,
+        "minimum": 1,
+        "obligatorio": false,
+        "type": "integer"
+      }
+    },
+    "respuestas": [
+      "200",
+      "422"
+    ]
+  },
+  "GET /api/v1/productos/precios": {
+    "cuerpo": null,
+    "parametros": {
+      "query:url": {
+        "maxLength": 2000,
+        "minLength": 8,
+        "obligatorio": true,
+        "type": "string"
+      }
+    },
+    "respuestas": [
+      "200",
+      "422"
+    ]
+  },
+  "GET /api/v1/salud": {
     "cuerpo": null,
     "parametros": {},
     "respuestas": [
       "200"
     ]
   },
-  "POST /auth/login": {
+  "GET /api/v1/tiendas": {
+    "cuerpo": null,
+    "parametros": {},
+    "respuestas": [
+      "200"
+    ]
+  },
+  "PATCH /api/v1/admin/usuarios/{usuario_id}/rol": {
+    "cuerpo": {
+      "campos": {
+        "rol": {
+          "type": "string"
+        }
+      },
+      "obligatorios": [
+        "rol"
+      ],
+      "type": "object"
+    },
+    "parametros": {
+      "path:usuario_id": {
+        "obligatorio": true,
+        "type": "integer"
+      }
+    },
+    "respuestas": [
+      "200",
+      "422"
+    ]
+  },
+  "PATCH /api/v1/carritos/{carrito_id}": {
+    "cuerpo": {
+      "campos": {
+        "nombre": {
+          "anyOf": [
+            "null",
+            "string"
+          ]
+        },
+        "presupuesto": {
+          "anyOf": [
+            "null",
+            "number"
+          ]
+        }
+      },
+      "obligatorios": [],
+      "type": "object"
+    },
+    "parametros": {
+      "path:carrito_id": {
+        "obligatorio": true,
+        "type": "integer"
+      }
+    },
+    "respuestas": [
+      "200",
+      "422"
+    ]
+  },
+  "PATCH /api/v1/carritos/{carrito_id}/items/{item_id}": {
+    "cuerpo": {
+      "campos": {
+        "prioridad": {
+          "maximum": 5.0,
+          "minimum": 1.0,
+          "type": "integer"
+        }
+      },
+      "obligatorios": [
+        "prioridad"
+      ],
+      "type": "object"
+    },
+    "parametros": {
+      "path:carrito_id": {
+        "obligatorio": true,
+        "type": "integer"
+      },
+      "path:item_id": {
+        "obligatorio": true,
+        "type": "integer"
+      }
+    },
+    "respuestas": [
+      "200",
+      "422"
+    ]
+  },
+  "POST /api/v1/auth/2fa/codigos-recuperacion": {
+    "cuerpo": {
+      "campos": {
+        "codigo": {
+          "maxLength": 20,
+          "minLength": 6,
+          "type": "string"
+        },
+        "contrasena": {
+          "type": "string"
+        }
+      },
+      "obligatorios": [
+        "codigo",
+        "contrasena"
+      ],
+      "type": "object"
+    },
+    "parametros": {},
+    "respuestas": [
+      "200",
+      "422"
+    ]
+  },
+  "POST /api/v1/auth/2fa/login": {
+    "cuerpo": {
+      "campos": {
+        "codigo": {
+          "maxLength": 20,
+          "minLength": 6,
+          "type": "string"
+        },
+        "token_2fa": {
+          "type": "string"
+        }
+      },
+      "obligatorios": [
+        "codigo",
+        "token_2fa"
+      ],
+      "type": "object"
+    },
+    "parametros": {},
+    "respuestas": [
+      "200",
+      "422"
+    ]
+  },
+  "POST /api/v1/auth/2fa/pendiente/activar": {
+    "cuerpo": {
+      "campos": {
+        "codigo": {
+          "maxLength": 20,
+          "minLength": 6,
+          "type": "string"
+        },
+        "token_2fa": {
+          "type": "string"
+        }
+      },
+      "obligatorios": [
+        "codigo",
+        "token_2fa"
+      ],
+      "type": "object"
+    },
+    "parametros": {},
+    "respuestas": [
+      "200",
+      "422"
+    ]
+  },
+  "POST /api/v1/auth/2fa/pendiente/configurar": {
+    "cuerpo": {
+      "campos": {
+        "token_2fa": {
+          "type": "string"
+        }
+      },
+      "obligatorios": [
+        "token_2fa"
+      ],
+      "type": "object"
+    },
+    "parametros": {},
+    "respuestas": [
+      "200",
+      "422"
+    ]
+  },
+  "POST /api/v1/auth/login": {
     "cuerpo": {
       "campos": {
         "contrasena": {
@@ -102,14 +400,63 @@
       "422"
     ]
   },
-  "POST /auth/logout": {
+  "POST /api/v1/auth/logout": {
     "cuerpo": null,
     "parametros": {},
     "respuestas": [
       "200"
     ]
   },
-  "POST /auth/registro": {
+  "POST /api/v1/auth/recuperar": {
+    "cuerpo": {
+      "campos": {
+        "correo": {
+          "format": "email",
+          "type": "string"
+        }
+      },
+      "obligatorios": [
+        "correo"
+      ],
+      "type": "object"
+    },
+    "parametros": {},
+    "respuestas": [
+      "202",
+      "422"
+    ]
+  },
+  "POST /api/v1/auth/recuperar/restablecer": {
+    "cuerpo": {
+      "campos": {
+        "codigo": {
+          "maxLength": 20,
+          "minLength": 6,
+          "type": "string"
+        },
+        "contrasena_nueva": {
+          "maxLength": 50,
+          "minLength": 8,
+          "type": "string"
+        },
+        "token": {
+          "type": "string"
+        }
+      },
+      "obligatorios": [
+        "codigo",
+        "contrasena_nueva",
+        "token"
+      ],
+      "type": "object"
+    },
+    "parametros": {},
+    "respuestas": [
+      "200",
+      "422"
+    ]
+  },
+  "POST /api/v1/auth/registro": {
     "cuerpo": {
       "campos": {
         "contrasena": {
@@ -131,6 +478,130 @@
     "parametros": {},
     "respuestas": [
       "201",
+      "422"
+    ]
+  },
+  "POST /api/v1/auth/registro/confirmar": {
+    "cuerpo": {
+      "campos": {
+        "codigo": {
+          "maxLength": 10,
+          "minLength": 6,
+          "type": "string"
+        },
+        "token_registro": {
+          "type": "string"
+        }
+      },
+      "obligatorios": [
+        "codigo",
+        "token_registro"
+      ],
+      "type": "object"
+    },
+    "parametros": {},
+    "respuestas": [
+      "201",
+      "422"
+    ]
+  },
+  "POST /api/v1/carritos": {
+    "cuerpo": {
+      "campos": {
+        "nombre": {
+          "anyOf": [
+            "null",
+            "string"
+          ]
+        },
+        "presupuesto": {
+          "exclusiveMinimum": 0.0,
+          "maximum": 1000000000.0,
+          "type": "number"
+        }
+      },
+      "obligatorios": [
+        "presupuesto"
+      ],
+      "type": "object"
+    },
+    "parametros": {},
+    "respuestas": [
+      "201",
+      "422"
+    ]
+  },
+  "POST /api/v1/carritos/{carrito_id}/items": {
+    "cuerpo": {
+      "campos": {
+        "envio": {
+          "anyOf": [
+            "null",
+            "number"
+          ]
+        },
+        "imagen": {
+          "anyOf": [
+            "null",
+            "string"
+          ]
+        },
+        "nombre": {
+          "maxLength": 500,
+          "minLength": 1,
+          "type": "string"
+        },
+        "precio": {
+          "maximum": 1000000000.0,
+          "minimum": 0.0,
+          "type": "number"
+        },
+        "prioridad": {
+          "maximum": 5.0,
+          "minimum": 1.0,
+          "type": "integer"
+        },
+        "tienda": {
+          "maxLength": 100,
+          "minLength": 1,
+          "type": "string"
+        },
+        "url": {
+          "maxLength": 2000,
+          "minLength": 8,
+          "type": "string"
+        }
+      },
+      "obligatorios": [
+        "nombre",
+        "precio",
+        "prioridad",
+        "tienda",
+        "url"
+      ],
+      "type": "object"
+    },
+    "parametros": {
+      "path:carrito_id": {
+        "obligatorio": true,
+        "type": "integer"
+      }
+    },
+    "respuestas": [
+      "201",
+      "422"
+    ]
+  },
+  "POST /api/v1/carritos/{carrito_id}/optimizar": {
+    "cuerpo": null,
+    "parametros": {
+      "path:carrito_id": {
+        "obligatorio": true,
+        "type": "integer"
+      }
+    },
+    "respuestas": [
+      "200",
       "422"
     ]
   }

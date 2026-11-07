@@ -1,8 +1,7 @@
+*.pyc
 .env
-venv/
 __pycache__/
-reporte_qa*.html
-.pytest_cache/
+correo.txt
 qa_salida/
 reporte_*.html
-correo.txt
+venv/

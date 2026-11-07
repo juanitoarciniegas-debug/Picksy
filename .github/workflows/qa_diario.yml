@@ -21,6 +21,7 @@ jobs:
       DB_HOST: localhost
       DB_PORT: "5432"
       DB_NAME: smartbudget
+      QA_VERSION_SW: v3          # CAMBIO (v3): queda escrito en historial_qa.csv (columna version_software)
       QA_TIENDAS_REALES: "1"
       MAIL_USERNAME: ${{ secrets.MAIL_USERNAME }}
 

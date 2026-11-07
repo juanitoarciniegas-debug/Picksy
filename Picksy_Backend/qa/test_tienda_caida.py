@@ -7,7 +7,7 @@ import time
 import pytest
 
 import buscador
-from ayudas import buscar_ok, consulta_db
+from ayudas import buscar_ok, cabecera_por_defecto, consulta_db
 import cache
 from mocks import producto
 
@@ -25,7 +25,7 @@ def tres_tiendas(tiendas):
 @pytest.mark.req("RF-06", "RNF-05")
 def test_cp06_1_una_tienda_caida_se_avisa_y_se_muestran_las_demas(client, tres_tiendas, termino):
     tres_tiendas.hacer_fallar("Alkosto")
-    r = client.get("/buscar", params={"producto": termino, "presupuesto": PRESUPUESTO})
+    r = client.get("/buscar", params={"producto": termino, "presupuesto": PRESUPUESTO}, headers=cabecera_por_defecto(client))
     assert r.status_code == 200
     data = r.json()
     assert {o["tienda"] for o in data["viables"]} == {"Éxito", "Ktronix"}
@@ -36,7 +36,7 @@ def test_cp06_1_una_tienda_caida_se_avisa_y_se_muestran_las_demas(client, tres_t
 def test_cp06_2_todas_las_tiendas_caidas_responde_200_con_avisos(client, tres_tiendas, termino):
     for nombre in tres_tiendas.nombres:
         tres_tiendas.hacer_fallar(nombre)
-    r = client.get("/buscar", params={"producto": termino, "presupuesto": PRESUPUESTO})
+    r = client.get("/buscar", params={"producto": termino, "presupuesto": PRESUPUESTO}, headers=cabecera_por_defecto(client))
     assert r.status_code == 200
     data = r.json()
     assert data["viables"] == [] and data["mejor_opcion"] is None
@@ -72,4 +72,4 @@ def test_rnf05_1_con_tiendas_caidas_el_resto_del_sistema_sigue_vivo(client, tres
         tres_tiendas.hacer_fallar(nombre)
     buscar_ok(client, termino, PRESUPUESTO)
     assert client.get("/").status_code == 200
-    assert client.get("/tiendas").status_code == 200
+    assert client.get("/tiendas", headers=cabecera_por_defecto(client)).status_code == 200

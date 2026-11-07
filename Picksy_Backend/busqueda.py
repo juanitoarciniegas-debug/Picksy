@@ -2,8 +2,10 @@ from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 
+from auth import usuario_actual
 from buscador import CONECTORES, NOMBRES, buscar_en_todas
-from historial import guardar_busqueda, usuario_opcional
+from historial import guardar_busqueda
+from relevancia import filtrar  # CAMBIO (DEF-01)
 
 router = APIRouter(tags=["Búsqueda"])
 
@@ -32,7 +34,7 @@ def buscar(
     presupuesto: float = Query(gt=0, le=PRESUPUESTO_MAXIMO, allow_inf_nan=False, description="Presupuesto máximo en COP"),
     tiendas: Optional[str] = Query(default=None, description="Tiendas separadas por coma"),
     actualizar: bool = Query(default=False, description="Ignorar la caché y consultar las tiendas ahora"),
-    usuario=Depends(usuario_opcional),  # historial: None si no hay sesión
+    usuario=Depends(usuario_actual),  # CAMBIO (login obligatorio): sin sesión responde 401
 ):
     # CAMBIO (QA DEF-03): la validación min_length se hace ANTES de quitar espacios, así que
     # "   " pasaba. Ahora se limpia primero y se exige un mínimo de 2 letras ya sin espacios.
@@ -52,6 +54,9 @@ def buscar(
             )
 
     productos, avisos = buscar_en_todas(producto, lista, forzar=actualizar)
+
+    # CAMBIO (DEF-01): se descartan los resultados que no tienen que ver con lo buscado.
+    productos, irrelevantes = filtrar(productos, producto)
 
     disponibles = [p for p in productos if p.disponible]
     agotados = len(productos) - len(disponibles)
@@ -75,17 +80,18 @@ def buscar(
         "viables": [_opcion(p, t) for p, t in viables],
         "descartadas": [_opcion(p, t) for p, t in descartadas],
         "agotados": agotados,
+        "irrelevantes": irrelevantes,   # CAMBIO (DEF-01): cuántos resultados se ocultaron por no coincidir
         "avisos": avisos,
     }
 
-    # Historial (B-06): solo guarda si el usuario tiene sesión iniciada.
+    # Historial (B-06): siempre hay usuario (la búsqueda exige sesión).
     guardar_busqueda(usuario, respuesta)
 
     return respuesta
 
 
 @router.get("/tiendas")
-def listar_tiendas():
+def listar_tiendas(usuario=Depends(usuario_actual)):  # CAMBIO (login obligatorio)
     """Tiendas disponibles, para que el frontend arme el selector."""
     return [
         {"nombre": c.nombre, "especialidad": getattr(c, "especialidad", "general")}

@@ -9,7 +9,7 @@ Que hace, en orden:
   2. Se conecta al servidor PostgreSQL
   3. Crea la base de datos si todavia no existe
   4. Ejecuta schema.sql (se puede repetir sin problema: no borra datos)
-  5. Verifica que esten las 10 tablas y las 10 tiendas
+  5. Verifica que esten todas las tablas, las columnas del 2FA/roles y las tiendas
 
 Si algo falla, explica la causa mas probable y como arreglarla.
 """
@@ -32,7 +32,29 @@ VARIABLES = ["DB_USER", "DB_PASSWORD", "DB_HOST", "DB_PORT", "DB_NAME"]
 TABLAS = [
     "usuarios", "tiendas", "productos", "precios", "historial_busquedas",
     "carritos", "carrito_items", "sesiones", "cache_busquedas", "cache_resultados",
+    "login_pendientes", "registros_pendientes",   # CAMBIO (DEF-06): tablas del 2FA
+    "codigos_recuperacion", "recuperaciones_clave",   # CAMBIO: códigos de recuperación y recuperar contraseña
 ]
+# CAMBIO (DEF-06): columnas que usa el backend en "usuarios" (2FA y roles)
+COLUMNAS_USUARIOS = ["totp_secreto", "totp_activo", "totp_ultimo_paso", "rol"]
+
+
+def asegurar_clave_totp(ruta_env: Path) -> None:
+    """CAMBIO (seguridad): crea TOTP_CLAVE en el .env si no existe (cifra el secreto de Google Authenticator en la base)."""
+    if (os.getenv("TOTP_CLAVE") or "").strip():
+        print("[OK] TOTP_CLAVE ya configurada (los secretos del 2FA se guardan cifrados)")
+        return
+    try:
+        from cryptography.fernet import Fernet
+    except ImportError:
+        terminar("Falta la libreria 'cryptography'", ["Ejecuta:  pip install -r requirements.txt"])
+    clave = Fernet.generate_key().decode()
+    texto = ruta_env.read_text(encoding="utf-8-sig")
+    if texto and not texto.endswith("\n"):
+        texto += "\n"
+    ruta_env.write_text(texto + f"TOTP_CLAVE={clave}\n", encoding="utf-8")
+    os.environ["TOTP_CLAVE"] = clave
+    print("[OK] Se genero TOTP_CLAVE y se guardo en .env. NO la pierdas ni la subas a GitHub: sin ella no se pueden leer los codigos del 2FA.")
 
 
 def terminar(titulo: str, ayuda: list[str] | None = None) -> None:
@@ -106,6 +128,8 @@ def main() -> None:
     except ValueError:
         terminar("DB_PORT debe ser un numero (por ejemplo 5432)")
 
+    asegurar_clave_totp(ruta_env)
+
     nombre_base = os.environ["DB_NAME"].strip()
     config = {
         "user": os.environ["DB_USER"].strip(),
@@ -153,13 +177,30 @@ def main() -> None:
         existentes = {fila[0] for fila in cur.fetchall()}
         cur.execute("SELECT count(*) FROM tiendas")
         n_tiendas = cur.fetchone()[0]
+        cur.execute("SELECT column_name FROM information_schema.columns WHERE table_name = 'usuarios'")
+        columnas = {fila[0] for fila in cur.fetchall()}
+    # CAMBIO (seguridad): cifra los secretos de 2FA que estuvieran guardados en texto plano (de versiones anteriores).
+    from cryptography.fernet import Fernet
+    fernet = Fernet(os.environ["TOTP_CLAVE"].encode())
+    with conexion, conexion.cursor() as cur:
+        cur.execute("SELECT id, totp_secreto FROM usuarios WHERE totp_secreto IS NOT NULL AND totp_secreto NOT LIKE 'gAAAA%'")
+        pendientes = cur.fetchall()
+        for uid, secreto in pendientes:
+            cur.execute("UPDATE usuarios SET totp_secreto = %s WHERE id = %s", (fernet.encrypt(secreto.encode()).decode(), uid))
+    if pendientes:
+        print(f"[OK] {len(pendientes)} secreto(s) de Google Authenticator que estaban sin cifrar ahora estan cifrados")
     conexion.close()
 
     faltantes = [t for t in TABLAS if t not in existentes]
     if faltantes:
         terminar(f"Faltan tablas: {', '.join(faltantes)}", ["Revisa que schema.sql este completo."])
-    print(f"[OK] {len(TABLAS)} tablas listas y {n_tiendas} tiendas cargadas")
+    faltan_columnas = [c for c in COLUMNAS_USUARIOS if c not in columnas]
+    if faltan_columnas:
+        terminar(f"A la tabla usuarios le faltan columnas: {', '.join(faltan_columnas)}", ["Revisa que schema.sql este completo."])
+    print(f"[OK] {len(TABLAS)} tablas listas, columnas de 2FA/roles correctas y {n_tiendas} tiendas cargadas")
 
+    print("\nSi aun no tienes un administrador, crealo una vez con:")
+    print("    python crear_admin.py")
     print("\nTodo listo. Ahora inicia el servidor con:")
     print("    uvicorn main:app --reload")
     print("y abre http://127.0.0.1:8000/docs para probar la API.")

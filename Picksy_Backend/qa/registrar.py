@@ -51,7 +51,7 @@ def datos_minimos():
         "fecha_hora_utc": ahora.strftime("%Y-%m-%d %H:%M:%S"),
         "id_ejecucion": f"{run}-{os.getenv('GITHUB_RUN_ATTEMPT', '1')}" if run else "local-" + ahora.strftime("%Y%m%d%H%M%S"),
         "disparador": os.getenv("GITHUB_EVENT_NAME", "local"), "commit": os.getenv("GITHUB_SHA", ""),
-        "rama": os.getenv("GITHUB_REF_NAME", "local"), "version_software": os.getenv("QA_VERSION_SW", "v1"),
+        "rama": os.getenv("GITHUB_REF_NAME", "local"), "version_software": os.getenv("QA_VERSION_SW", "v3"),
         "tiendas_reales": "sí" if os.getenv("QA_TIENDAS_REALES") == "1" else "no",
         "casos": [{"categoria": "ERROR DE INFRAESTRUCTURA", "caso": "el bot no generó resultados.json",
                    "requisitos": [], "estado": "failed", "duracion_s": 0, "motivo": "Ver el log de la ejecución"}],

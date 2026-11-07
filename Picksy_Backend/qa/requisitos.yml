@@ -7,7 +7,7 @@
 #   id            identificador del ERS
 #   titulo        resumen corto
 #   prioridad     Alta / Media (RF) o "-" (RNF, el ERS no la define)
-#   implementado  false = la v1 no tiene ese código (se verifica en el contrato)
+#   implementado  false = esa versión no tiene ese código (se verifica en el contrato)
 #   bloqueado_por ambigüedades del ERS (A-xx) que impiden definir el oráculo
 #   metodo_manual true = no se puede automatizar del todo (usabilidad, legal...)
 #   propuesto     true = función que existe en el código pero NO está en el ERS: QA la prueba, pero no cuenta en 'X de 25'
@@ -40,28 +40,11 @@ requisitos:
   - {id: RF-10, titulo: Ordena viables por total ascendente, prioridad: Alta}
   - {id: RF-11, titulo: Mejor opción y ahorro, prioridad: Alta, bloqueado_por: [A-02]}
   - {id: RF-12, titulo: Enlace a la tienda original, prioridad: Alta, pendiente: "que el enlace abra la página correcta (muestreo manual CP-12.2)"}
-  - id: RF-13
-    titulo: Lista de productos con prioridad
-    prioridad: Alta
-    implementado: false
-    bloqueado_por: [A-03]
-    nota: "Sin ruta en /openapi.json ni pantalla en v1 (revisado 28-oct-2026)."
-  - id: RF-14
-    titulo: Mochila 0/1
-    prioridad: Alta
-    implementado: false
-    nota: "Sin ruta ni pantalla en v1. El oráculo (fuerza bruta) ya está en qa/referencia_mochila.py."
+  - {id: RF-13, titulo: Lista de productos con prioridad (carritos), prioridad: Alta, bloqueado_por: [A-03], nota: "Implementado en la v3 (rutas /carritos). La escala de prioridad 1-5 (5 = indispensable) es decisión de Backend: el ERS no la define (A-03)."}
+  - {id: RF-14, titulo: Mochila 0/1, prioridad: Alta, nota: "Implementado en la v3 (POST /carritos/{id}/optimizar). Se verifica contra el oráculo qa/referencia_mochila.py."}
   - {id: RF-15, titulo: Guarda las búsquedas del usuario, prioridad: Media}
-  - id: RF-16
-    titulo: Variación de precios en el tiempo
-    prioridad: Media
-    implementado: false
-    nota: "La tabla precios guarda las fotos, pero no hay ruta que las exponga en v1."
-  - id: RF-17
-    titulo: Comparar carritos
-    prioridad: Media
-    implementado: false
-    nota: "Hay tablas carritos y carrito_items, pero ninguna ruta en v1."
+  - {id: RF-16, titulo: Variación de precios en el tiempo, prioridad: Media, nota: "Implementado en la v3 (GET /productos/precios)."}
+  - {id: RF-17, titulo: Comparar carritos, prioridad: Media, nota: "Implementado en la v3 (GET /carritos/comparar)."}
   - {id: RNF-01, titulo: Búsqueda en menos de 5 s con caché, prioridad: "-"}
   - {id: RNF-02, titulo: "Hash bcrypt, HTTPS y consultas parametrizadas", prioridad: "-", pendiente: "HTTPS (solo se verifica en un despliegue)"}
   - {id: RNF-03, titulo: Usabilidad - flujo en pocos pasos, prioridad: "-", metodo_manual: true}
@@ -74,4 +57,24 @@ requisitos:
     titulo: "Verificación en dos pasos (2FA) con TOTP - PROPUESTO por QA"
     prioridad: "-"
     propuesto: true
-    nota: "Llegó en la v2 sin ID de requisito (el ERS sección 11 exige uno). Requerimientos debe aprobarlo, rechazarlo o pedir que se retire."
+    nota: "Llegó en la v2 sin ID de requisito (el ERS sección 11 exige uno). En la v3 pasó de OPCIONAL a OBLIGATORIO (registro y login). Requerimientos debe aprobarlo, rechazarlo o pedir que se retire."
+  - id: RF-19
+    titulo: "Roles y panel de administrador - PROPUESTO por QA"
+    prioridad: "-"
+    propuesto: true
+    nota: "Llegó en la v3 sin ID de requisito. Rol 'usuario' y 'admin'; el admin lista, elimina usuarios y cambia roles."
+  - id: RF-20
+    titulo: "Recuperar contraseña y códigos de recuperación del 2FA - PROPUESTO por QA"
+    prioridad: "-"
+    propuesto: true
+    nota: "Llegó en la v3 sin ID de requisito. Enlace por correo + código del Authenticator; 8 códigos de un solo uso si se pierde el teléfono."
+  - id: RNF-09
+    titulo: "Límite de intentos (429) contra fuerza bruta y abuso - PROPUESTO por QA"
+    prioridad: "-"
+    propuesto: true
+    nota: "Llegó en la v3 sin ID de requisito. Login, código de 6 dígitos, registro y recuperación."
+  - id: RNF-10
+    titulo: "API versionada (/api/v1), errores en formato unificado y CORS configurable - PROPUESTO por QA"
+    prioridad: "-"
+    propuesto: true
+    nota: "Llegó en la v3 sin ID de requisito (lo pidió el profesor)."

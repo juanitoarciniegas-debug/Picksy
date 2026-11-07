@@ -1,4 +1,5 @@
 from datetime import datetime, timezone
+from urllib.parse import urlsplit
 
 import httpx
 
@@ -15,6 +16,18 @@ class ConectorVtex:
     def __init__(self, nombre: str, dominio: str):
         self.nombre = nombre
         self.dominio = dominio
+
+    def _enlace(self, p: dict) -> str:
+        """
+        CAMBIO (enlace al producto): el campo "link" que devuelve VTEX a veces trae un dominio interno
+        (por ejemplo ...vtexcommercestable.com.br) o viene vacío, y el botón «Ver en la tienda» no abría
+        la publicación. Se toma solo la RUTA del enlace y se arma siempre con el dominio público de la tienda.
+        """
+        ruta = urlsplit((p.get("link") or "").strip()).path
+        if not ruta or ruta == "/":
+            texto = (p.get("linkText") or "").strip("/ ")
+            ruta = f"/{texto}/p" if texto else ""
+        return f"https://{self.dominio}{ruta}" if ruta else ""
 
     def buscar(self, termino: str, limite: int = 20) -> list:
         url = f"https://{self.dominio}/api/catalog_system/pub/products/search"
@@ -52,7 +65,7 @@ class ConectorVtex:
                 precio=float(precio),
                 envio=None,  # pendiente: ver nota de abajo
                 disponible=(oferta.get("AvailableQuantity") or 0) > 0,
-                url=p.get("link", ""),
+                url=self._enlace(p),
                 imagen=imagenes[0].get("imageUrl") if imagenes else None,
                 consultado_en=ahora,
             ))

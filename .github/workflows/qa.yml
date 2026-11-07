@@ -4,7 +4,7 @@ name: QA Picksy
 
 on:
   push:
-    branches: [main]
+    branches: [main, version-3]   # CAMBIO (v3): el bot también corre en cada push a la rama de la versión 3
   pull_request:
   workflow_dispatch:
 
@@ -22,6 +22,7 @@ jobs:
       DB_HOST: localhost
       DB_PORT: "5432"
       DB_NAME: smartbudget
+      QA_VERSION_SW: v3          # CAMBIO (v3): queda escrito en historial_qa.csv (columna version_software)
       MAIL_USERNAME: ${{ secrets.MAIL_USERNAME }}   # solo para saber si el correo está configurado
 
     services:
