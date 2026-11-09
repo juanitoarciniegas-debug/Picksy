@@ -1,0 +1,34 @@
+/* CAMBIO (2FA obligatorio / roles): estilos de las páginas nuevas configurar-2fa.html y admin.html.
+   Archivo nuevo: no modifica styles.css. */
+
+/* ---------- configurar-2fa.html ---------- */
+.pasos { padding-left: 20px; margin: 0 0 14px; line-height: 1.8; font-size: 13px; color: #39463A; }
+.qr-caja { display: flex; flex-direction: column; align-items: center; gap: 10px; margin: 14px 0 18px; padding: 18px; border: 1px solid var(--line); border-radius: 18px; background: var(--paper); text-align: center; }
+.qr-caja img { width: 200px; height: 200px; background: white; padding: 10px; border: 1px solid var(--line); border-radius: 16px; }
+.qr-caja code { background: #EFF1E8; padding: 6px 10px; border-radius: 8px; font-size: 12px; letter-spacing: 1px; word-break: break-all; user-select: all; }
+.auth-form .codigo-input { letter-spacing: 6px; text-align: center; font-size: 18px; font-weight: 700; }
+
+/* ---------- admin.html ---------- */
+.admin { max-width: 980px; margin: 0 auto; }
+.admin-titulo { font: 800 32px/1.2 'Manrope', sans-serif; letter-spacing: -1px; color: var(--green); margin: 8px 0; }
+.admin-tabla-caja { margin-top: 22px; overflow-x: auto; border: 1px solid var(--line); border-radius: 18px; background: var(--paper); }
+.admin-tabla { width: 100%; border-collapse: collapse; font-size: 13px; }
+.admin-tabla th, .admin-tabla td { text-align: left; padding: 12px 14px; border-bottom: 1px solid var(--line); white-space: nowrap; }
+.admin-tabla th { font-size: 11px; text-transform: uppercase; letter-spacing: .5px; color: var(--muted); }
+.admin-tabla tr:last-child td { border-bottom: 0; }
+.admin-tabla .acciones { display: flex; gap: 8px; }
+.etiqueta-rol { padding: 4px 10px; border-radius: 999px; font-size: 11px; font-weight: 800; background: #EFF1E8; color: var(--muted); }
+.etiqueta-rol.admin { background: var(--green-soft); color: var(--green); }
+.boton-peligro { color: #B54E51 !important; border-color: #E7C4C5 !important; }
+.admin-nota { font-size: 12px; margin-top: 10px; }
+
+/* Ajustes de espaciado */
+.login-form-wrap .back-link { display: block; margin-bottom: 14px; }
+.admin { padding-top: 32px; padding-bottom: 48px; }
+
+/* ---------- códigos de recuperación (configurar-2fa.html) ---------- */
+.codigos-lista { list-style: none; margin: 16px 0; padding: 16px; display: grid; grid-template-columns: 1fr 1fr; gap: 8px 16px; border: 1px dashed var(--line); border-radius: 16px; background: var(--paper); }
+.codigos-lista li { font: 700 15px/1.6 ui-monospace, Consolas, monospace; letter-spacing: 1px; user-select: all; }
+.codigos-acciones { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 14px; }
+.codigos-confirmar { display: flex; align-items: center; gap: 8px; margin: 10px 0 14px; font-size: 13px; }
+@media (max-width: 480px) { .codigos-lista { grid-template-columns: 1fr; } }

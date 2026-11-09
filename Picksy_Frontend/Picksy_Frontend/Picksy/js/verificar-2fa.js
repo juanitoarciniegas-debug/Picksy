@@ -89,26 +89,48 @@ useRecoveryCode?.addEventListener("click", (event) => {
 });
 
 // Envío del código de recuperación.
-recoveryCodeForm?.addEventListener("submit", (event) => {
+// CAMBIO (backend): se usa el mismo endpoint del login (POST /auth/2fa/login): acepta el código de la app
+// o un código de recuperación. Cada código de recuperación sirve UNA sola vez.
+recoveryCodeForm?.addEventListener("submit", async (event) => {
     event.preventDefault();
 
     const recoveryCode = document.querySelector("#recoveryCode").value.trim();
 
-    if (!recoveryCode) {
+    if (recoveryCode.length < 6) {
         feedback.textContent = "Introduce tu código de recuperación.";
         feedback.style.color = "#B54E51";
         return;
     }
 
-    /*
-      BACKEND:
-      Enviar challengeId y recoveryCode.
-      El servidor comprobará que el código sea válido
-      y que todavía no haya sido utilizado.
-    */
-
-    feedback.textContent =
-        "La validación del código de recuperación está pendiente del backend.";
-
+    const boton = recoveryCodeForm.querySelector('button[type="submit"]');
+    boton.disabled = true;
+    feedback.textContent = "Verificando código...";
     feedback.style.color = "#65854C";
+
+    try {
+        const sesion = await PicksyAPI.completarLogin2FA(
+            challengeId,
+            recoveryCode,
+            sessionStorage.getItem("picksy2FARecordar") === "1"
+        );
+
+        sessionStorage.removeItem("picksy2FAChallenge");
+        sessionStorage.removeItem("picksy2FARecordar");
+        // Aviso para la página principal: cuántos códigos de recuperación quedan.
+        if (sesion.uso_codigo_recuperacion) {
+            sessionStorage.setItem("picksyAviso",
+                `Entraste con un código de recuperación. Te quedan ${sesion.codigos_restantes}. Cuando puedas, vuelve a configurar tu Authenticator.`);
+        }
+        window.location.href = "index.html";
+    } catch (error) {
+        feedback.textContent = error.message || "No fue posible verificar el código.";
+        feedback.style.color = "#B54E51";
+        if (/Vuelve a escribir/.test(error.message || "")) {
+            sessionStorage.removeItem("picksy2FAChallenge");
+            sessionStorage.removeItem("picksy2FARecordar");
+            window.setTimeout(() => window.location.replace("login.html"), 2500);
+        }
+    } finally {
+        boton.disabled = false;
+    }
 });

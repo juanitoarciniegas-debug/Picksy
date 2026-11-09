@@ -50,22 +50,27 @@ recoveryForm?.addEventListener("submit", async (event) => {
     recoveryEmailError.textContent = "";
     recoveryEmail.classList.remove("invalid");
 
-    recoveryFeedback.textContent =
-        "El formulario está validado, pero la recuperación todavía no está conectada al backend.";
+    // CAMBIO (backend): conexión real. El servidor responde siempre lo mismo (exista o no el correo)
+    // y, si la cuenta existe, envía un enlace válido 30 minutos que abre restablecer.html.
+    if (typeof PicksyAPI === "undefined") {
+        recoveryFeedback.textContent = "No se pudo cargar la conexión con el servidor.";
+        recoveryFeedback.style.color = "#B54E51";
+        return;
+    }
 
+    const boton = recoveryForm.querySelector('button[type="submit"]');
+    boton.disabled = true;
+    recoveryFeedback.textContent = "Enviando...";
     recoveryFeedback.style.color = "#65854C";
 
-    // ==============================================
-    // PENDIENTE DE CONEXIÓN CON EL BACKEND
-    //
-    // Aquí se enviará el correo al servidor.
-    // El servidor deberá:
-    // 1. Generar un token temporal y seguro.
-    // 2. Enviar un enlace de recuperación al correo.
-    // 3. Validar el token cuando el usuario abra el enlace.
-    // 4. Permitir establecer una nueva contraseña.
-    //
-    // No debemos cambiar la contraseña directamente
-    // desde este formulario del frontend.
-    // ==============================================
+    try {
+        const respuesta = await PicksyAPI.solicitarRecuperacion(correo);
+        recoveryFeedback.textContent = respuesta.mensaje;
+        recoveryFeedback.style.color = "#65854C";
+    } catch (error) {
+        recoveryFeedback.textContent = error.message || "No fue posible enviar las instrucciones.";
+        recoveryFeedback.style.color = "#B54E51";
+    } finally {
+        boton.disabled = false;
+    }
 });

@@ -1,4 +1,3 @@
-
 document.addEventListener("DOMContentLoaded", () => {
     const registerForm = document.getElementById("registerForm");
 
@@ -92,18 +91,17 @@ document.addEventListener("DOMContentLoaded", () => {
 
             if (resultado.success) {
                 mostrarFeedback(
-                    "¡Registro completado correctamente!",
+                    "Datos correctos. Ahora configura Google Authenticator...",
                     "success"
                 );
 
+                // CAMBIO (2FA obligatorio): la cuenta todavía NO existe. El servidor devolvió un QR; se pasa a
+                // configurar-2fa.html, donde la persona escanea el QR y escribe el código para crear la cuenta.
+                sessionStorage.setItem("picksy2FARegistro", JSON.stringify(resultado.datos));
                 registerForm.reset();
-
-                // Cuando exista el backend, aquí podremos redirigir
-                // al usuario o iniciar su sesión.
-                // CAMBIO (backend): el backend ya existe; se redirige al login a los 1.5 segundos.
                 setTimeout(() => {
-                    window.location.href = "login.html";
-                }, 1500);
+                    window.location.href = "configurar-2fa.html";
+                }, 600);
             } else {
                 mostrarFeedback(
                     resultado.message || "No fue posible completar el registro.",
@@ -238,12 +236,13 @@ document.addEventListener("DOMContentLoaded", () => {
         // Comportamiento anterior (provisional): no registraba usuarios reales.
         // Ahora sí se crea el usuario en la base de datos del backend.
         try {
-            await PicksyAPI.registrar({
+            // CAMBIO (2FA obligatorio): ahora devuelve { token_registro, qr, secreto, ... } en vez de crear el usuario.
+            const datos = await PicksyAPI.registrar({
                 nombre: usuario.nombre,
                 correo: usuario.correo,
                 contrasena: usuario.password // el backend espera "contrasena", no "password"
             });
-            return { success: true };
+            return { success: true, datos: { ...datos, correo: usuario.correo } };
         } catch (error) {
             return { success: false, message: error.message };
         }

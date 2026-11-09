@@ -7,10 +7,17 @@
   <meta name="description" content="Picksy te ayuda a comparar productos y encontrar mejores precios.">
   <title>Picksy | Compra mejor, ahorra más</title>
   <link rel="stylesheet" href="css/styles.css">
+  <!-- CAMBIO (login obligatorio): sin sesión guardada, esta página manda al login antes de mostrarse. -->
+  <script>
+    try { if (!localStorage.getItem("picksy_token") && !sessionStorage.getItem("picksy_token")) location.replace("login.html"); } catch (e) { }
+  </script>
   <!-- CAMBIO (backend): estilos de las tarjetas con imagen y de los mensajes de la búsqueda -->
   <link rel="stylesheet" href="css/busqueda.css">
+  <!-- CAMBIO (backend): estilos de las ventanas «+ Carrito» y «Precio» -->
+  <link rel="stylesheet" href="css/carrito.css">
   <!-- CAMBIO (backend): api.js (conexión con el backend) debe cargarse ANTES de app.js -->
   <script src="js/api.js" defer></script>
+  <script src="js/compras-ui.js" defer></script>
   <script src="js/app.js" defer></script>
 </head>
 
@@ -28,12 +35,17 @@
     <nav class="main-nav" aria-label="Navegación principal">
       <button class="nav-link active" data-view="buscar">Buscar productos</button>
       <button class="nav-link" data-view="historial">Mi historial</button>
+      <!-- CAMBIO (backend): carritos con mochila (RF-13/14/17) -->
+      <a class="nav-link" href="carrito.html">Mis carritos</a>
+      <a class="nav-link" href="pago.html">Membresía</a>
     </nav>
     <div class="header-actions">
-      <!-- CAMBIO (2FA): enlace a la pantalla de seguridad; app.js lo muestra solo cuando hay sesión iniciada -->
-      <a class="button button-secondary hidden" id="enlaceSeguridad" href="seguridad.html">Seguridad</a>
-      <span class="user-greeting">¡Hola, visitante!</span>
-      <a class="avatar" href="login.html" aria-label="Ir a iniciar sesión">V</a>
+      <!-- CAMBIO (roles): enlace al panel de administrador; app.js lo muestra solo si el usuario tiene rol "admin" -->
+      <a class="button button-secondary hidden" id="enlaceAdmin" href="admin.html">Administrar usuarios</a>
+      <span class="user-greeting">¡Hola!</span>
+      <button class="avatar" id="logoutButton" type="button" aria-label="Cerrar sesión">
+        V
+      </button>
     </div>
   </header>
 
@@ -43,7 +55,7 @@
         <span class="eyebrow"><span class="eyebrow-dot"></span> Compra inteligente</span>
         <h1>Encuentra lo que quieres.<br><span>Paga menos.</span></h1>
         <p>Compara opciones, descubre buenos precios y dale más valor a tu dinero.</p>
-        
+
         <!-- Buscador principal de Picksy -->
         <form class="search-form" id="searchForm">
 
@@ -115,6 +127,17 @@
       <p class="search-notices hidden" id="searchNotices"></p>
 
       <div class="product-grid" id="productGrid" aria-live="polite"></div>
+      <nav class="pagination hidden" id="pagination" aria-label="Páginas de productos">
+        <button class="pagination-button" id="previousPage" type="button">
+          ← Anterior
+        </button>
+
+        <div class="pagination-numbers" id="paginationNumbers"></div>
+
+        <button class="pagination-button" id="nextPage" type="button">
+          Siguiente →
+        </button>
+      </nav>
       <div class="empty-state hidden" id="emptyState">
         <span class="empty-icon">⌕</span>
         <h3>No encontramos productos</h3>
@@ -175,6 +198,32 @@
   </footer>
 
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
+  <div class="modal-overlay hidden" id="logoutModal" role="dialog" aria-modal="true" aria-labelledby="logoutTitle">
+
+    <div class="modal-card">
+      <button class="modal-close" id="closeLogoutModal" type="button" aria-label="Cerrar ventana">
+        &times;
+      </button>
+
+      <div class="modal-icon">↗</div>
+
+      <h2 id="logoutTitle">¿Quieres cerrar sesión?</h2>
+
+      <p>
+        Tendrás que volver a iniciar sesión para acceder a tu cuenta de Picksy.
+      </p>
+
+      <div class="modal-actions">
+        <button class="button button-secondary" id="cancelLogout" type="button">
+          Cancelar
+        </button>
+
+        <button class="button button-primary" id="confirmLogout" type="button">
+          Cerrar sesión
+        </button>
+      </div>
+    </div>
+  </div>
 </body>
 
 </html>

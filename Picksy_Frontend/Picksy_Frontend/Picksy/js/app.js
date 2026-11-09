@@ -66,14 +66,10 @@ function escapeHtml(value) {
 
 let ultimosResultados = null; // última respuesta de /buscar; permite reordenar sin volver a consultar
 let numeroBusqueda = 0;       // sirve para ignorar respuestas viejas si el usuario busca otra vez
+const PRODUCTOS_POR_PAGINA = 12;
+let paginaActual = 1;
 
 const formatoPesos = new Intl.NumberFormat("es-CO", { style: "currency", currency: "COP", maximumFractionDigits: 0 });
-
-function leerPresupuesto() {
-  // El campo #budgetInput es de tipo "number": su valor ya viene como "300000" (sin puntos).
-  const valor = Number(($("#budgetInput")?.value || "").trim());
-  return Number.isFinite(valor) && valor > 0 ? valor : null;
-}
 
 // Solo se aceptan enlaces http/https: los datos vienen de páginas de terceros.
 function urlSegura(valor) {
@@ -124,6 +120,11 @@ function tarjetaProducto(opcion, esMejor) {
   const boton = enlace
     ? `<a class="button button-primary" href="${escapeHtml(enlace)}" target="_blank" rel="noopener noreferrer">Ver en ${escapeHtml(opcion.tienda)} →</a>`
     : "";
+  // CAMBIO (backend): botones para el carrito (RF-13) y para ver cómo ha cambiado el precio (RF-16).
+  const clave = escapeHtml(opcion.tienda + "|" + opcion.url);
+  const extras = `
+    <button type="button" class="button button-secondary button-mini" data-accion="carrito" data-clave="${clave}">+ Carrito</button>
+    <button type="button" class="button button-secondary button-mini" data-accion="precio" data-clave="${clave}">Precio</button>`;
   return `
     <article class="product-card">
       <div class="product-visual">
@@ -138,7 +139,7 @@ function tarjetaProducto(opcion, esMejor) {
           <span>${escapeHtml(textoEnvio(opcion))}</span>
           <span>${escapeHtml(textoFecha(opcion.actualizado_en))}</span>
         </div>
-        <div class="card-actions">${boton}</div>
+        <div class="card-actions">${boton}${enlace ? extras : ""}</div>
       </div>
     </article>`;
 }
@@ -151,41 +152,183 @@ function ordenar(lista) {
   return copia; // "recommended" conserva el orden del backend (de menor a mayor total)
 }
 
+function renderPagination(totalPaginas) {
+  const pagination = $("#pagination");
+  const numbers = $("#paginationNumbers");
+
+  if (!pagination || !numbers) return;
+
+  pagination.classList.toggle("hidden", totalPaginas <= 1);
+
+  if (totalPaginas <= 1) {
+    numbers.innerHTML = "";
+    return;
+  }
+
+  const paginas = new Set([
+    1,
+    totalPaginas
+  ]);
+
+  for (
+    let i = Math.max(1, paginaActual - 2);
+    i <= Math.min(totalPaginas, paginaActual + 2);
+    i++
+  ) {
+    paginas.add(i);
+  }
+
+  const ordenadas = [...paginas].sort((a, b) => a - b);
+  let contenido = "";
+  let anterior = 0;
+
+  ordenadas.forEach((pagina) => {
+    if (anterior && pagina - anterior > 1) {
+      contenido += `<span class="pagination-ellipsis">…</span>`;
+    }
+
+    contenido += `
+      <button
+        type="button"
+        class="pagination-number ${pagina === paginaActual ? "active" : ""}"
+        data-page="${pagina}"
+        aria-label="Página ${pagina}"
+        aria-current="${pagina === paginaActual ? "page" : "false"}">
+        ${pagina}
+      </button>
+    `;
+
+    anterior = pagina;
+  });
+
+  numbers.innerHTML = contenido;
+
+  const previousButton = $("#previousPage");
+  const nextButton = $("#nextPage");
+
+  if (previousButton) {
+    previousButton.disabled = paginaActual === 1;
+  }
+
+  if (nextButton) {
+    nextButton.disabled = paginaActual === totalPaginas;
+  }
+}
+
+function cambiarPagina(pagina) {
+  if (!ultimosResultados) return;
+
+  const totalProductos = ultimosResultados.viables.length;
+  const totalPaginas = Math.ceil(totalProductos / PRODUCTOS_POR_PAGINA);
+
+  if (pagina < 1 || pagina > totalPaginas) return;
+
+  paginaActual = pagina;
+  mostrarResultados();
+
+  $("#searchView")?.scrollIntoView({
+    behavior: "smooth",
+    block: "start"
+  });
+}
+
 function mostrarResultados() {
   const datos = ultimosResultados;
   const grid = $("#productGrid");
   const vacio = $("#emptyState");
+
   if (!datos || !grid) return;
 
   const viables = ordenar(datos.viables);
-  const claveMejor = datos.mejor_opcion ? datos.mejor_opcion.tienda + "|" + datos.mejor_opcion.url : null;
-  grid.innerHTML = viables.map((o) => tarjetaProducto(o, claveMejor === o.tienda + "|" + o.url)).join("");
+  const totalProductos = viables.length;
+  const totalPaginas = Math.ceil(
+    totalProductos / PRODUCTOS_POR_PAGINA
+  );
 
-  $("#resultsTitle").textContent = `Resultados para «${datos.producto}»`;
-  const presupuestoTexto = formatoPesos.format(datos.presupuesto);
-  if (viables.length > 0) {
-    const sobran = datos.descartadas.length;
-    $("#resultsSubtitle").textContent =
-      `${opciones(viables.length)} dentro de tu presupuesto de ${presupuestoTexto}.` +
-      (sobran ? ` ${sobran === 1 ? "Otra supera" : `Otras ${sobran} superan`} tu presupuesto.` : "");
-  } else {
-    $("#resultsSubtitle").textContent = `Tu presupuesto: ${presupuestoTexto}.`;
+  if (totalPaginas > 0 && paginaActual > totalPaginas) {
+    paginaActual = totalPaginas;
   }
 
-  vacio?.classList.toggle("hidden", viables.length > 0);
-  if (viables.length === 0 && vacio) {
+  const inicio = (paginaActual - 1) * PRODUCTOS_POR_PAGINA;
+  const productosPagina = viables.slice(
+    inicio,
+    inicio + PRODUCTOS_POR_PAGINA
+  );
+
+  const claveMejor = datos.mejor_opcion
+    ? datos.mejor_opcion.tienda + "|" + datos.mejor_opcion.url
+    : null;
+
+  grid.innerHTML = productosPagina.map((opcion) => {
+    return tarjetaProducto(
+      opcion,
+      claveMejor === opcion.tienda + "|" + opcion.url
+    );
+  }).join("");
+
+  $("#resultsTitle").textContent =
+    `Resultados para «${datos.producto}»`;
+
+  const presupuestoTexto = formatoPesos.format(datos.presupuesto);
+
+  if (totalProductos > 0) {
+    const sobran = datos.descartadas.length;
+
+    $("#resultsSubtitle").textContent =
+      `${opciones(totalProductos)} dentro de tu presupuesto de ${presupuestoTexto}.` +
+      (sobran
+        ? ` ${sobran === 1 ? "Otra supera" : `Otras ${sobran} superan`} tu presupuesto.`
+        : "");
+  } else {
+    $("#resultsSubtitle").textContent =
+      `Tu presupuesto: ${presupuestoTexto}.`;
+  }
+
+  vacio?.classList.toggle("hidden", totalProductos > 0);
+
+  if (totalProductos === 0 && vacio) {
     const titulo = vacio.querySelector("h3");
     const texto = vacio.querySelector("p");
+
     if (datos.descartadas.length > 0) {
-      if (titulo) titulo.textContent = "Ninguna opción cabe en tu presupuesto";
-      if (texto) texto.textContent =
-        `Encontramos ${opciones(datos.descartadas.length)}, pero la más barata cuesta ${formatoPesos.format(datos.descartadas[0].total)}. Prueba con un presupuesto mayor.`;
+      if (titulo) {
+        titulo.textContent = "Ninguna opción cabe en tu presupuesto";
+      }
+
+      if (texto) {
+        texto.textContent =
+          `Encontramos ${opciones(datos.descartadas.length)}, pero la más barata cuesta ${formatoPesos.format(datos.descartadas[0].total)}. Prueba con un presupuesto mayor.`;
+      }
     } else {
-      if (titulo) titulo.textContent = "No encontramos productos";
-      if (texto) texto.textContent = `No encontramos «${datos.producto}» en las tiendas consultadas. Prueba con otro nombre.`;
+      if (titulo) {
+        titulo.textContent = "No encontramos productos";
+      }
+
+      if (texto) {
+        texto.textContent =
+          `No encontramos «${datos.producto}» en las tiendas consultadas. Prueba con otro nombre.`;
+      }
     }
   }
+
+  renderPagination(totalPaginas);
 }
+
+$("#paginationNumbers")?.addEventListener("click", (event) => {
+  const boton = event.target.closest("[data-page]");
+
+  if (!boton) return;
+
+  cambiarPagina(Number(boton.dataset.page));
+});
+
+$("#previousPage")?.addEventListener("click", () => {
+  cambiarPagina(paginaActual - 1);
+});
+
+$("#nextPage")?.addEventListener("click", () => {
+  cambiarPagina(paginaActual + 1);
+});
 
 async function buscarEnBackend(producto, presupuesto) {
   if (typeof PicksyAPI === "undefined") {
@@ -193,12 +336,14 @@ async function buscarEnBackend(producto, presupuesto) {
     return;
   }
   const numero = ++numeroBusqueda;
+  paginaActual = 1;
   const boton = $("#searchForm button[type='submit']");
   if (boton) boton.disabled = true;
 
   mostrarAvisos([]);
   $("#productGrid").innerHTML = "";
   $("#emptyState")?.classList.add("hidden");
+  $("#pagination")?.classList.add("hidden");
   mostrarEstado(`Buscando «${producto}» en las tiendas… la primera búsqueda puede tardar unos segundos.`, "loading");
 
   try {
@@ -230,9 +375,23 @@ $("#productGrid")?.addEventListener("error", (event) => {
   }
 }, true);
 
+// CAMBIO (backend): clic en «+ Carrito» o «Precio» de una tarjeta (una sola escucha para toda la cuadrícula).
+$("#productGrid")?.addEventListener("click", (event) => {
+  const boton = event.target.closest("[data-accion]");
+  if (!boton || !ultimosResultados) return;
+  const todas = [...ultimosResultados.viables, ...ultimosResultados.descartadas];
+  const opcion = todas.find((o) => o.tienda + "|" + o.url === boton.dataset.clave);
+  if (!opcion || typeof PicksyUI === "undefined") return;
+  if (boton.dataset.accion === "carrito") PicksyUI.elegirCarrito(opcion);
+  else PicksyUI.mostrarVariacion(opcion.url, opcion.nombre);
+});
+
 function limpiarBusqueda() {
   numeroBusqueda++; // cancela cualquier búsqueda en curso
   ultimosResultados = null;
+  paginaActual = 1;
+  $("#pagination")?.classList.add("hidden");
+  $("#paginationNumbers")?.replaceChildren();
   $("#searchInput").value = "";
   $("#productGrid").innerHTML = "";
   $("#emptyState")?.classList.add("hidden");
@@ -297,7 +456,7 @@ const searchFeedback = document.getElementById("searchFeedback");
 const presupuestoGuardado = localStorage.getItem(CLAVE_PRESUPUESTO);
 
 if (presupuestoGuardado !== null) {
-    budgetInput.value = presupuestoGuardado;
+  budgetInput.value = presupuestoGuardado;
 }
 
 // Cuando el usuario pulsa "Buscar", leemos ambos campos.
@@ -305,67 +464,67 @@ if (presupuestoGuardado !== null) {
 // que el manejador de arriba (el que llama al backend) usa para validar y guardar el presupuesto;
 // así el formulario tiene un solo manejador y no se hacen dos cosas a la vez.
 function validarPresupuesto() {
-    const producto = searchInput.value.trim();
-    const presupuestoTexto = budgetInput.value.trim();
+  const producto = searchInput.value.trim();
+  const presupuestoTexto = budgetInput.value.trim();
 
-    // Validamos que el presupuesto sea un número positivo.
-    if (
-        presupuestoTexto !== "" &&
-        (!Number.isFinite(Number(presupuestoTexto)) ||
-         Number(presupuestoTexto) <= 0)
-    ) {
-        searchFeedback.textContent =
-            "Ingresa un presupuesto mayor que cero.";
-        return null;
-    }
+  // Validamos que el presupuesto sea un número positivo.
+  if (
+    presupuestoTexto !== "" &&
+    (!Number.isFinite(Number(presupuestoTexto)) ||
+      Number(presupuestoTexto) <= 0)
+  ) {
+    searchFeedback.textContent =
+      "Ingresa un presupuesto mayor que cero.";
+    return null;
+  }
 
-    // CAMBIO (backend): el backend necesita un presupuesto para filtrar los resultados,
-    // así que ya no se permite buscar con el campo vacío.
-    if (presupuestoTexto === "") {
-        localStorage.removeItem(CLAVE_PRESUPUESTO);
-        searchFeedback.textContent =
-            "Escribe tu presupuesto en pesos, por ejemplo 300000.";
-        return null;
-    }
+  // CAMBIO (backend): el backend necesita un presupuesto para filtrar los resultados,
+  // así que ya no se permite buscar con el campo vacío.
+  if (presupuestoTexto === "") {
+    localStorage.removeItem(CLAVE_PRESUPUESTO);
+    searchFeedback.textContent =
+      "Escribe tu presupuesto en pesos, por ejemplo 300000.";
+    return null;
+  }
 
-    // Convertimos el presupuesto de texto a número.
-    const presupuesto = presupuestoTexto === ""
-        ? null
-        : Number(presupuestoTexto);
+  // Convertimos el presupuesto de texto a número.
+  const presupuesto = presupuestoTexto === ""
+    ? null
+    : Number(presupuestoTexto);
 
-    // ============================================
-    // AQUÍ SE GUARDA EL PRESUPUESTO
-    // localStorage conserva el dato en este navegador.
-    // Si el usuario deja el campo vacío, eliminamos
-    // el presupuesto guardado anteriormente.
-    // ============================================
-    if (presupuesto === null) {
-        localStorage.removeItem(CLAVE_PRESUPUESTO);
-    } else {
-        localStorage.setItem(
-            CLAVE_PRESUPUESTO,
-            String(presupuesto)
-        );
-    }
+  // ============================================
+  // AQUÍ SE GUARDA EL PRESUPUESTO
+  // localStorage conserva el dato en este navegador.
+  // Si el usuario deja el campo vacío, eliminamos
+  // el presupuesto guardado anteriormente.
+  // ============================================
+  if (presupuesto === null) {
+    localStorage.removeItem(CLAVE_PRESUPUESTO);
+  } else {
+    localStorage.setItem(
+      CLAVE_PRESUPUESTO,
+      String(presupuesto)
+    );
+  }
 
-    // Datos disponibles para utilizarlos en la búsqueda.
-    // producto: nombre del artículo.
-    // presupuesto: valor numérico o null si no se indicó.
-    console.log("Producto buscado:", producto);
-    console.log("Presupuesto máximo:", presupuesto);
+  // Datos disponibles para utilizarlos en la búsqueda.
+  // producto: nombre del artículo.
+  // presupuesto: valor numérico o null si no se indicó.
+  console.log("Producto buscado:", producto);
+  console.log("Presupuesto máximo:", presupuesto);
 
-    // Mensaje de confirmación del presupuesto.
-    if (presupuesto !== null) {
-        searchFeedback.textContent =
-            `Presupuesto establecido: $${presupuesto.toLocaleString("es-CO")}.`;
-    } else {
-        searchFeedback.textContent =
-            "Buscarás sin un límite de presupuesto.";
-    }
+  // Mensaje de confirmación del presupuesto.
+  if (presupuesto !== null) {
+    searchFeedback.textContent =
+      `Presupuesto establecido: $${presupuesto.toLocaleString("es-CO")}.`;
+  } else {
+    searchFeedback.textContent =
+      "Buscarás sin un límite de presupuesto.";
+  }
 
-    // CAMBIO (backend): la búsqueda real se hace en el manejador de "submit" de arriba (buscarEnBackend),
-    // que envía "producto" y "presupuesto" al backend.
-    return presupuesto;
+  // CAMBIO (backend): la búsqueda real se hace en el manejador de "submit" de arriba (buscarEnBackend),
+  // que envía "producto" y "presupuesto" al backend.
+  return presupuesto;
 }
 
 document.querySelectorAll(".nav-link").forEach((button) => {
@@ -391,6 +550,7 @@ $("#sortSelect")?.addEventListener("change", () => {
     showToast("El ordenamiento estará disponible cuando haya productos.");
     return;
   }
+  paginaActual = 1;
   mostrarResultados();
 });
 
@@ -434,7 +594,7 @@ function haySesion() {
 async function cargarHistorial() {
   if (!haySesion()) return;
   try {
-    const filas = await PicksyAPI.listarHistorial();
+    const filas = await PicksyAPI.listarHistorial(1, 15);   // CAMBIO (paginación): las 15 más recientes; filas.total trae el total guardado
     state.history = filas.map((fila) => ({
       query: fila.termino,
       presupuesto: fila.presupuesto,
@@ -446,10 +606,60 @@ async function cargarHistorial() {
   }
 }
 
-// CAMBIO (backend): sesión del usuario.
-// Si hay una sesión iniciada (token guardado por js/api.js), reemplaza "¡Hola, visitante!"
-// por el nombre del usuario y convierte el avatar en un botón para cerrar sesión.
-// Requiere que js/api.js esté cargado en index.html ANTES de este archivo.
+function abrirModalLogout() {
+  const modal = $("#logoutModal");
+
+  if (!modal) {
+    showToast("No se encontró la ventana de cierre de sesión.");
+    return;
+  }
+
+  modal.classList.remove("hidden");
+  $("#cancelLogout")?.focus();
+}
+
+function cerrarModalLogout() {
+  $("#logoutModal")?.classList.add("hidden");
+  $(".avatar")?.focus();
+}
+
+$("#closeLogoutModal")?.addEventListener("click", cerrarModalLogout);
+
+$("#cancelLogout")?.addEventListener("click", cerrarModalLogout);
+
+$("#logoutModal")?.addEventListener("click", (event) => {
+  if (event.target.id === "logoutModal") {
+    cerrarModalLogout();
+  }
+});
+
+document.addEventListener("keydown", (event) => {
+  if (event.key === "Escape" && !$("#logoutModal")?.classList.contains("hidden")) {
+    cerrarModalLogout();
+  }
+});
+
+$("#confirmLogout")?.addEventListener("click", async () => {
+  const boton = $("#confirmLogout");
+
+  if (boton) {
+    boton.disabled = true;
+    boton.textContent = "Cerrando sesión...";
+  }
+
+  try {
+    await PicksyAPI.cerrarSesion();
+    window.location.replace("login.html");
+  } catch (error) {
+    showToast(error.message || "No se pudo cerrar la sesión.");
+
+    if (boton) {
+      boton.disabled = false;
+      boton.textContent = "Cerrar sesión";
+    }
+  }
+});
+
 async function cargarSesion() {
   const saludo = document.querySelector(".user-greeting");
   const avatar = document.querySelector(".avatar");
@@ -457,26 +667,36 @@ async function cargarSesion() {
 
   try {
     const usuario = await PicksyAPI.usuarioActual();
-    if (!usuario) return; // sin sesión: se queda como visitante
+    if (!usuario) {                       
+      window.location.replace("login.html");
+      return;
+    }
 
     // Por ahora el backend solo guarda el correo; se muestra la parte anterior al "@".
     const nombre = usuario.correo.split("@")[0];
     saludo.textContent = `¡Hola, ${nombre}!`;
-    $("#enlaceSeguridad")?.classList.remove("hidden"); // CAMBIO (2FA): con sesión se ve el enlace a "Seguridad"
+    if (usuario.rol === "admin") $("#enlaceAdmin")?.classList.remove("hidden"); // CAMBIO (roles): solo los admin ven el panel
     cargarHistorial(); // trae el historial guardado en el backend
     avatar.textContent = nombre.charAt(0).toUpperCase();
-    avatar.href = "#";
     avatar.title = "Cerrar sesión";
     avatar.setAttribute("aria-label", "Cerrar sesión");
-    avatar.addEventListener("click", async (event) => {
+
+    avatar.addEventListener("click", (event) => {
       event.preventDefault();
-      if (!window.confirm("¿Quieres cerrar sesión?")) return;
-      await PicksyAPI.cerrarSesion();
-      window.location.reload();
+      abrirModalLogout();
     });
   } catch {
-    // Sin conexión con el backend: la página sigue funcionando como visitante.
+    // Sin conexión con el backend: se deja la página como está (el aviso lo da cada acción que falle).
   }
 }
 
 cargarSesion();
+
+// CAMBIO (backend): si se entró con un código de recuperación, verificar-2fa.js deja un aviso para mostrarlo aquí.
+try {
+  const avisoPendiente = sessionStorage.getItem("picksyAviso");
+  if (avisoPendiente) {
+    sessionStorage.removeItem("picksyAviso");
+    window.setTimeout(() => showToast(avisoPendiente), 600);
+  }
+} catch { /* sin almacenamiento */ }

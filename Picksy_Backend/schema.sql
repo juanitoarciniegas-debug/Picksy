@@ -162,6 +162,49 @@ CREATE TABLE IF NOT EXISTS cache_resultados (
     PRIMARY KEY (cache_id, producto_id)
 );
 
+-- 11. MÉTODOS DE PAGO (CAMBIO pagos). NUNCA se guarda el número completo de la tarjeta ni el CVV:
+--     solo la marca y los últimos 4 dígitos para que el usuario reconozca cuál es.
+CREATE TABLE IF NOT EXISTS metodos_pago (
+    id             SERIAL PRIMARY KEY,
+    usuario_id     INTEGER NOT NULL REFERENCES usuarios(id) ON DELETE CASCADE,
+    tipo           VARCHAR(20) NOT NULL CHECK (tipo IN ('tarjeta_credito', 'tarjeta_debito', 'pse', 'nequi')),
+    alias          VARCHAR(50) NOT NULL,
+    marca          VARCHAR(20),
+    ultimos4       CHAR(4),
+    banco          VARCHAR(60),
+    predeterminado BOOLEAN NOT NULL DEFAULT FALSE,
+    creado_en      TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS idx_metodos_pago_usuario ON metodos_pago (usuario_id);
+
+-- 12. MEMBRESÍA (CAMBIO pagos): Picksy no vende productos; lo único que se cobra es el uso de la página.
+--     Una fila por usuario con el plan y hasta cuándo está activa. Sin fila (o vencida) = sin membresía.
+CREATE TABLE IF NOT EXISTS membresias (
+    usuario_id INTEGER PRIMARY KEY REFERENCES usuarios(id) ON DELETE CASCADE,
+    plan       VARCHAR(20) NOT NULL,
+    inicia_en  TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    vence_en   TIMESTAMPTZ NOT NULL
+);
+
+-- 13. PAGOS DE LA MEMBRESÍA: nace "pendiente" (se envía el correo), pasa a "pagado" al confirmarlo o a "cancelado".
+--     El precio se guarda al crear el pago: si los precios de los planes cambian después, este pago no cambia.
+CREATE TABLE IF NOT EXISTS pagos_membresia (
+    id                 SERIAL PRIMARY KEY,
+    referencia         VARCHAR(20) NOT NULL UNIQUE,
+    usuario_id         INTEGER NOT NULL REFERENCES usuarios(id) ON DELETE CASCADE,
+    plan               VARCHAR(20) NOT NULL,
+    meses              INTEGER NOT NULL CHECK (meses >= 1),
+    valor              NUMERIC(14,2) NOT NULL CHECK (valor > 0),
+    metodo_id          INTEGER REFERENCES metodos_pago(id) ON DELETE SET NULL,
+    metodo_descripcion VARCHAR(120) NOT NULL,
+    estado             VARCHAR(12) NOT NULL DEFAULT 'pendiente' CHECK (estado IN ('pendiente', 'pagado', 'cancelado')),
+    creado_en          TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    expira_en          TIMESTAMPTZ NOT NULL,
+    pagado_en          TIMESTAMPTZ,
+    membresia_hasta    TIMESTAMPTZ
+);
+CREATE INDEX IF NOT EXISTS idx_pagos_membresia_usuario ON pagos_membresia (usuario_id, creado_en DESC);
+
 -- =====================================================
 -- DATOS INICIALES: las 10 tiendas
 -- =====================================================

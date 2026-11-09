@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Administrar usuarios | Picksy</title>
+  <link rel="stylesheet" href="css/styles.css">
+  <link rel="stylesheet" href="css/cuenta.css">
+  <!-- CAMBIO (roles): página nueva. Sin sesión manda al login; si el usuario no es admin, admin.js lo manda al inicio. -->
+  <script>
+    try { if (!localStorage.getItem("picksy_token") && !sessionStorage.getItem("picksy_token")) location.replace("login.html"); } catch (e) { }
+  </script>
+  <script src="js/api.js" defer></script>
+  <script src="js/admin.js" defer></script>
+</head>
+
+<body class="app-body">
+  <header class="topbar">
+    <a class="brand" href="index.html" aria-label="Picksy, página principal">
+      <span class="brand-mark" aria-hidden="true">
+        <svg viewBox="0 0 48 48" role="img" aria-label="Hoja Picksy">
+          <path d="M39 7C20 7 8 15 8 29c0 7 5 12 12 12C34 41 40 24 39 7Z" fill="currentColor" />
+          <path d="M10 39C17 28 23 22 33 15" fill="none" stroke="#F5F4D0" stroke-width="3" stroke-linecap="round" />
+        </svg>
+      </span>
+      <span>picksy</span>
+    </a>
+    <div class="header-actions">
+      <a class="button button-secondary" href="index.html">← Volver a Picksy</a>
+    </div>
+  </header>
+
+  <main class="page-wrap admin">
+    <span class="eyebrow"><span class="eyebrow-dot"></span> Administración</span>
+    <h1 class="admin-titulo">Usuarios de Picksy</h1>
+    <p class="muted">
+      Aquí puedes ver las cuentas, cambiar su rol y eliminarlas. Un administrador no puede eliminarse a sí mismo:
+      lo debe hacer otro administrador, y siempre queda al menos uno.
+    </p>
+
+    <p class="form-feedback" id="adminFeedback" role="status" aria-live="polite"></p>
+
+    <div class="admin-tabla-caja">
+      <table class="admin-tabla">
+        <thead>
+          <tr>
+            <th>Correo</th>
+            <th>Rol</th>
+            <th>Verificación en dos pasos</th>
+            <th>Creado</th>
+            <th>Acciones</th>
+          </tr>
+        </thead>
+        <tbody id="cuerpoUsuarios"></tbody>
+      </table>
+    </div>
+    <p class="muted admin-nota" id="totalUsuarios"></p>
+  </main>
+</body>
+
+</html>

@@ -34,6 +34,7 @@ TABLAS = [
     "carritos", "carrito_items", "sesiones", "cache_busquedas", "cache_resultados",
     "login_pendientes", "registros_pendientes",   # CAMBIO (DEF-06): tablas del 2FA
     "codigos_recuperacion", "recuperaciones_clave",   # CAMBIO: códigos de recuperación y recuperar contraseña
+    "metodos_pago", "membresias", "pagos_membresia",   # CAMBIO (pagos): métodos de pago, membresía y sus pagos
 ]
 # CAMBIO (DEF-06): columnas que usa el backend en "usuarios" (2FA y roles)
 COLUMNAS_USUARIOS = ["totp_secreto", "totp_activo", "totp_ultimo_paso", "rol"]

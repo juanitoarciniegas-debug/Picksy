@@ -1,7 +1,4 @@
-*.pyc
 .env
-__pycache__/
-correo.txt
-qa_salida/
-reporte_*.html
 venv/
+__pycache__/
+*.pyc

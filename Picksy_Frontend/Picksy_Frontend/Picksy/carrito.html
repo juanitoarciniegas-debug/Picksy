@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mis carritos | Picksy</title>
+  <link rel="stylesheet" href="css/styles.css">
+  <link rel="stylesheet" href="css/cuenta.css">
+  <link rel="stylesheet" href="css/carrito.css">
+  <!-- CAMBIO (backend): página nueva. Sin sesión manda al login. -->
+  <script>
+    try { if (!localStorage.getItem("picksy_token") && !sessionStorage.getItem("picksy_token")) location.replace("login.html"); } catch (e) { }
+  </script>
+  <script src="js/api.js" defer></script>
+  <script src="js/compras-ui.js" defer></script>
+  <script src="js/carrito.js" defer></script>
+</head>
+
+<body class="app-body">
+  <header class="topbar">
+    <a class="brand" href="index.html" aria-label="Picksy, página principal">
+      <span class="brand-mark" aria-hidden="true">
+        <svg viewBox="0 0 48 48" role="img" aria-label="Hoja Picksy">
+          <path d="M39 7C20 7 8 15 8 29c0 7 5 12 12 12C34 41 40 24 39 7Z" fill="currentColor" />
+          <path d="M10 39C17 28 23 22 33 15" fill="none" stroke="#F5F4D0" stroke-width="3" stroke-linecap="round" />
+        </svg>
+      </span>
+      <span>picksy</span>
+    </a>
+    <div class="header-actions">
+      <a class="button button-secondary" href="index.html">← Volver a Picksy</a>
+    </div>
+  </header>
+
+  <main class="page-wrap carritos">
+    <span class="eyebrow"><span class="eyebrow-dot"></span> Compra con plan</span>
+    <h1 class="carritos-titulo">Mis carritos</h1>
+    <p class="muted">
+      Arma una lista, ponle una prioridad de 1 a 5 a cada producto y Picksy calcula qué conviene comprar
+      para que lo más importante quepa en tu presupuesto.
+    </p>
+    <p class="form-feedback" id="carritoFeedback" role="status" aria-live="polite"></p>
+
+    <div class="carritos-grid">
+      <aside>
+        <div class="panel-caja">
+          <h2>Nuevo carrito</h2>
+          <form class="form-vertical" id="formNuevo">
+            <label for="nuevoNombre">Nombre (opcional)</label>
+            <input type="text" id="nuevoNombre" maxlength="100" placeholder="Por ejemplo: Mercado del mes">
+            <label for="nuevoPresupuesto">Presupuesto ($)</label>
+            <input type="number" id="nuevoPresupuesto" min="1" step="1" placeholder="300000" required>
+            <button class="button button-primary" type="submit">
+              Crear carrito
+            </button>
+
+            <p class="muted" id="limiteCarritos" aria-live="polite"></p>
+          </form>
+          <ul class="lista-carritos" id="listaCarritos"></ul>
+        </div>
+      </aside>
+
+      <section>
+        <div class="panel-caja" id="detalle">
+          <p class="vacio-texto" id="detalleVacio">
+            Crea un carrito o elige uno de la lista. Para agregar productos, haz una búsqueda y pulsa «+ Carrito» en el
+            que te guste.
+          </p>
+        </div>
+
+        <div class="panel-caja comparar-caja hidden" id="compararCaja">
+          <h2>Comparar dos carritos</h2>
+          <div class="comparar-fila">
+            <div class="form-vertical"><label for="compA">Carrito A</label><select id="compA"></select></div>
+            <div class="form-vertical"><label for="compB">Carrito B</label><select id="compB"></select></div>
+            <button class="button button-secondary" id="botonComparar" type="button">Comparar</button>
+          </div>
+          <div class="comparar-resultado hidden" id="compararResultado"></div>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <!-- Modal para confirmar la eliminación de un carrito -->
+  <div class="modal-overlay hidden" id="eliminarCarritoModal" role="dialog" aria-modal="true"
+    aria-labelledby="eliminarCarritoTitulo">
+
+    <div class="modal-card">
+      <button class="modal-close" id="cerrarEliminarModal" type="button" aria-label="Cerrar ventana">&times;</button>
+
+      <div class="modal-icon modal-icon-danger">
+        !
+      </div>
+
+      <h2 id="eliminarCarritoTitulo">¿Eliminar este carrito?</h2>
+
+      <p id="eliminarCarritoMensaje">
+        Esta acción eliminará el carrito y todos los productos que contiene.
+        No podrás recuperar esta información.
+      </p>
+
+      <div class="modal-actions">
+        <button class="button button-secondary" id="cancelarEliminar" type="button">
+          Cancelar
+        </button>
+
+        <button class="button button-danger" id="confirmarEliminar" type="button">
+          Sí, eliminar carrito
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+</body>
+
+</html>

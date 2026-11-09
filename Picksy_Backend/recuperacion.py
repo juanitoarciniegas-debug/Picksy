@@ -9,21 +9,21 @@ Flujo:
                                                  código de Google Authenticator (o un código de recuperación):
                                                  así, quien solo tiene el correo no puede apoderarse de la cuenta.
 
-Correo: si en el .env está SMTP_HOST, se envía por SMTP. Si no, el enlace se imprime en la terminal del backend
+Correo: ver correos.py. Si en el .env está SMTP_HOST se envía por SMTP; si no, se imprime en la terminal del backend
 (sirve para probar y para la demostración sin configurar un servidor de correo).
+También se avisa por correo cuando la contraseña se cambia.
 """
 import hashlib
 import logging
 import secrets
-import smtplib
 from datetime import datetime, timedelta, timezone
-from email.message import EmailMessage
 
 from fastapi import APIRouter, BackgroundTasks, HTTPException, Request
 from pydantic import BaseModel, EmailStr, Field
 from sqlalchemy import text
 
 import config
+import correos          # CAMBIO (correos): plantillas y envío en un solo lugar
 import limitador
 import totp
 from auth import encriptar
@@ -52,28 +52,9 @@ def _hash(token: str) -> str:
 
 
 def enviar_correo(destino: str, enlace: str) -> None:
-    """Envía el correo (o imprime el enlace si no hay SMTP configurado). Nunca lanza error hacia el usuario."""
-    if not config.SMTP_HOST:
-        print(f"\n[recuperación] Enlace para {destino} (válido {MINUTOS_ENLACE} min):\n    {enlace}\n")
-        return
-    try:
-        msg = EmailMessage()
-        msg["Subject"] = "Restablece tu contraseña de Picksy"
-        msg["From"] = config.SMTP_REMITENTE
-        msg["To"] = destino
-        msg.set_content(
-            "Hola,\n\nRecibimos una solicitud para restablecer tu contraseña de Picksy.\n"
-            f"Abre este enlace (vale {MINUTOS_ENLACE} minutos):\n\n{enlace}\n\n"
-            "Necesitarás también un código de Google Authenticator.\n"
-            "Si no fuiste tú, ignora este mensaje: tu contraseña no cambia.\n"
-        )
-        with smtplib.SMTP(config.SMTP_HOST, config.SMTP_PORT, timeout=15) as servidor:
-            servidor.starttls()
-            if config.SMTP_USUARIO:
-                servidor.login(config.SMTP_USUARIO, config.SMTP_CLAVE)
-            servidor.send_message(msg)
-    except Exception:  # noqa: BLE001 - un fallo del correo no debe romper la respuesta
-        log.exception("No se pudo enviar el correo de recuperación")
+    """Envía el correo con las instrucciones (o lo imprime si no hay SMTP configurado). Nunca lanza error hacia el usuario.
+    CAMBIO (correos): el contenido ahora vive en correos.py; esta función se conserva porque las pruebas de QA la interceptan."""
+    correos.recuperacion(destino, enlace, MINUTOS_ENLACE)
 
 
 @router.post("", status_code=202)
@@ -100,14 +81,14 @@ def solicitar(datos: RecuperarEntrada, request: Request, tareas: BackgroundTasks
 
 
 @router.post("/restablecer")
-def restablecer(datos: RestablecerEntrada, request: Request):
+def restablecer(datos: RestablecerEntrada, request: Request, tareas: BackgroundTasks):
     limitador.exigir_libre(f"restablecer-ip:{limitador.ip_de(request)}", 10, 900)
     error = None
 
     with engine.begin() as conn:
         fila = conn.execute(
             text("""
-                SELECT r.usuario_id, u.totp_secreto, u.totp_activo, u.totp_ultimo_paso
+                SELECT r.usuario_id, u.correo, u.totp_secreto, u.totp_activo, u.totp_ultimo_paso
                 FROM recuperaciones_clave r JOIN usuarios u ON u.id = r.usuario_id
                 WHERE r.token_hash = :h AND r.expira_en > NOW()
             """),
@@ -133,6 +114,7 @@ def restablecer(datos: RestablecerEntrada, request: Request):
                 conn.execute(text("DELETE FROM recuperaciones_clave WHERE usuario_id = :u"), {"u": fila.usuario_id})
                 conn.execute(text("DELETE FROM sesiones WHERE usuario_id = :u"), {"u": fila.usuario_id})
                 conn.execute(text("DELETE FROM login_pendientes WHERE usuario_id = :u"), {"u": fila.usuario_id})
+                tareas.add_task(correos.clave_cambiada, fila.correo)   # CAMBIO (correos): aviso de contraseña cambiada
                 return {"mensaje": "Contraseña actualizada. Ya puedes iniciar sesión."}
 
     raise HTTPException(status_code=400, detail=error)

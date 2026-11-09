@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Membresía y pagos | Picksy</title>
+  <link rel="stylesheet" href="css/styles.css">
+  <link rel="stylesheet" href="css/cuenta.css">
+  <link rel="stylesheet" href="css/carrito.css">
+  <link rel="stylesheet" href="css/pago.css">
+  <!-- CAMBIO (pagos): página nueva. Sin sesión manda al login. -->
+  <script>
+    try { if (!localStorage.getItem("picksy_token") && !sessionStorage.getItem("picksy_token")) location.replace("login.html"); } catch (e) { }
+  </script>
+  <script src="js/api.js" defer></script>
+  <script src="js/pago.js" defer></script>
+</head>
+
+<body class="app-body">
+  <header class="topbar">
+    <a class="brand" href="index.html" aria-label="Picksy, página principal">
+      <span class="brand-mark" aria-hidden="true">
+        <svg viewBox="0 0 48 48" role="img" aria-label="Hoja Picksy">
+          <path d="M39 7C20 7 8 15 8 29c0 7 5 12 12 12C34 41 40 24 39 7Z" fill="currentColor" />
+          <path d="M10 39C17 28 23 22 33 15" fill="none" stroke="#F5F4D0" stroke-width="3" stroke-linecap="round" />
+        </svg>
+      </span>
+      <span>picksy</span>
+    </a>
+    <div class="header-actions">
+      <a class="button button-secondary" href="carrito.html">← Mis carritos</a>
+      <a class="button button-secondary" href="index.html">Volver a Picksy</a>
+    </div>
+  </header>
+
+  <main class="page-wrap pagos">
+    <span class="eyebrow"><span class="eyebrow-dot"></span> Membresía</span>
+    <h1 class="carritos-titulo" id="tituloPagos">Membresía de Picksy</h1>
+    <p class="muted">
+      Picksy no vende productos: lo único que cobramos es el uso de la página. Elige el plan que prefieras.
+    </p>
+    <p class="aviso-demo" role="note">
+      <strong>Modo demostración:</strong> el pago es simulado y no se cobra dinero real.
+      Por tu seguridad nunca te pedimos el número completo de la tarjeta ni el código de seguridad.
+    </p>
+    <p class="form-feedback" id="pagoFeedback" role="status" aria-live="polite"></p>
+
+    <!-- Estado actual de la membresía -->
+    <div class="estado-membresia" id="estadoMembresia" aria-live="polite"></div>
+
+    <!-- ===== Vista 1: elegir plan y método de pago ===== -->
+    <section id="vistaCheckout" hidden>
+      <div class="pagos-grid pagos-grid-checkout">
+        <div class="pagos-pasos">
+          <div class="panel-caja">
+            <h2><span class="paso-num">1</span> Elige tu plan</h2>
+            <div id="planesElegir" role="radiogroup" aria-label="Plan de membresía"></div>
+            <p class="muted nota-planes">Ningún plan se renueva solo. Si ya tienes membresía, el plan nuevo se suma al tiempo que te queda.</p>
+          </div>
+          <div class="panel-caja">
+            <h2><span class="paso-num">2</span> Método de pago</h2>
+            <div id="metodosElegir" role="radiogroup" aria-label="Método de pago"></div>
+            <div id="formularioMetodoCheckout"></div>
+          </div>
+        </div>
+        <aside class="panel-caja resumen-pago">
+          <h2>Resumen</h2>
+          <dl class="dialogo-datos" id="resumenPago"></dl>
+          <button class="button button-primary button-wide" id="botonContinuar" type="button" disabled>
+            Continuar al pago
+          </button>
+          <p class="muted nota-planes">Te enviaremos un correo con el resumen. El cobro solo se hace cuando lo confirmes.</p>
+        </aside>
+      </div>
+
+      <div class="panel-caja">
+        <h2>Mis pagos</h2>
+        <div class="tabla-caja">
+          <table class="tabla-items" id="tablaPagos" hidden>
+            <thead>
+              <tr><th>Referencia</th><th>Fecha</th><th>Plan</th><th>Método</th><th>Total</th><th>Estado</th><th></th></tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+        <p class="vacio-texto" id="sinPagos" hidden>Aún no has hecho pagos.</p>
+      </div>
+    </section>
+
+    <!-- ===== Vista 2: confirmar el pago (ya se envió el correo) ===== -->
+    <section id="vistaConfirmar" hidden>
+      <div class="panel-caja panel-centro">
+        <div class="icono-pago" aria-hidden="true">✉</div>
+        <h2>Revisa tu correo y confirma el pago</h2>
+        <p class="muted">
+          Te enviamos un correo con el resumen. Todavía <strong>no se ha cobrado</strong> nada:
+          confirma aquí para activar tu membresía.
+        </p>
+        <dl class="dialogo-datos" id="datosConfirmar"></dl>
+        <p class="muted" id="venceEn"></p>
+        <div class="modal-actions">
+          <button class="button button-secondary" id="botonCancelarPago" type="button">Cancelar pago</button>
+          <button class="button button-primary" id="botonConfirmarPago" type="button">Confirmar y pagar</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== Vista 3: pago confirmado ===== -->
+    <section id="vistaExito" hidden>
+      <div class="panel-centro panel-caja">
+        <div class="icono-pago icono-exito" aria-hidden="true">✓</div>
+        <h2>¡Pago confirmado!</h2>
+        <p class="muted">Tu membresía está activa. Te enviamos el comprobante por correo.</p>
+        <dl class="dialogo-datos" id="datosExito"></dl>
+        <div class="modal-actions">
+          <a class="button button-secondary" href="pago.html">Ver mis pagos</a>
+          <a class="button button-primary" href="index.html">Seguir comparando</a>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+</body>
+
+</html>

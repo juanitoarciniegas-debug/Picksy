@@ -7,6 +7,8 @@
     <title>Recuperar contraseña | Picksy</title>
 
     <link rel="stylesheet" href="css/styles.css">
+    <!-- CAMBIO (backend): api.js debe cargarse ANTES de recuperar.js -->
+    <script src="js/api.js" defer></script>
     <script src="js/recuperar.js" defer></script>
 </head>
 
@@ -54,7 +56,7 @@
 
                 <p class="muted">
                     Escribe el correo electrónico asociado a tu cuenta.
-                    Te enviaremos instrucciones para restablecerla.
+                    Te enviaremos un enlace para restablecerla. Necesitarás también tu código de Google Authenticator (o un código de recuperación).
                 </p>
 
                 <form id="recoveryForm" class="auth-form" novalidate>

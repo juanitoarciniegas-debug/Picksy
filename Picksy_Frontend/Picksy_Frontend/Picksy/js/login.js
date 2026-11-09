@@ -1,191 +1,155 @@
-// ==========================================
-// ELEMENTOS DEL FORMULARIO
-// ==========================================
 
 const form = document.querySelector("#loginForm");
 const email = document.querySelector("#email");
 const password = document.querySelector("#password");
 const remember = document.querySelector("#remember");
-
 const feedback = document.querySelector("#formFeedback");
 const togglePassword = document.querySelector("#togglePassword");
 
-
-// ==========================================
-// VALIDACIONES Y MENSAJES
-// ==========================================
-
 function validarEmail(valor) {
-  const expresion = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-  return expresion.test(valor);
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(valor);
 }
 
 function setError(input, targetId, message) {
-  const target = document.querySelector(`#${targetId}`);
+  const errorElement = document.getElementById(targetId);
 
-  target.textContent = message;
+  errorElement.textContent = message;
   input.classList.toggle("invalid", Boolean(message));
-  input.setAttribute("aria-invalid", message ? "true" : "false");
+  input.setAttribute("aria-invalid", String(Boolean(message)));
 }
 
-function mostrarFeedback(message, type = "success") {
+function mostrarFeedback(message, type = "info") {
   feedback.textContent = message;
-
-  const colors = {
-    success: "#65854C",
-    error: "#B54E51",
-    info: "#778075"
-  };
-
-  feedback.style.color = colors[type] || colors.info;
+  feedback.className = `form-feedback ${type}`;
 }
 
 function limpiarFeedback() {
   feedback.textContent = "";
+  feedback.className = "form-feedback";
 }
 
-
-// ==========================================
-// VALIDACIÓN EN TIEMPO REAL
-// ==========================================
-
-email?.addEventListener("input", () => {
+// Validación del correo mientras se escribe.
+email.addEventListener("input", () => {
   const valor = email.value.trim();
 
-  if (valor === "") {
+  if (!valor || validarEmail(valor)) {
     setError(email, "emailError", "");
-  } else if (!validarEmail(valor)) {
-    setError(
-      email,
-      "emailError",
-      "El formato del correo electrónico no es válido."
-    );
   } else {
-    setError(email, "emailError", "");
+    setError(email, "emailError", "Ingresa un correo electrónico válido.");
   }
 
   limpiarFeedback();
 });
 
-password?.addEventListener("input", () => {
+// Limpiar el error de contraseña al escribir.
+password.addEventListener("input", () => {
   setError(password, "passwordError", "");
   limpiarFeedback();
 });
 
-
-// ==========================================
-// MOSTRAR U OCULTAR CONTRASEÑA
-// ==========================================
-
-togglePassword?.addEventListener("click", () => {
+// Mostrar u ocultar contraseña.
+togglePassword.addEventListener("click", () => {
   const mostrar = password.type === "password";
 
   password.type = mostrar ? "text" : "password";
-  togglePassword.textContent = mostrar ? "Ocultar" : "Ver";
-
+  togglePassword.textContent = mostrar ? "Ocultar" : "Mostrar";
   togglePassword.setAttribute(
     "aria-label",
     mostrar ? "Ocultar contraseña" : "Mostrar contraseña"
   );
+  togglePassword.setAttribute("aria-pressed", String(mostrar));
 });
 
-
-// ==========================================
-// INICIO DE SESIÓN
-// ==========================================
-
-form?.addEventListener("submit", async (event) => {
+// Inicio de sesión.
+form.addEventListener("submit", async (event) => {
   event.preventDefault();
+  limpiarFeedback();
 
-  const emailValue = email.value.trim();
-  const passwordValue = password.value;
+  const correo = email.value.trim();
+  const contrasena = password.value;
+  const recordar = remember.checked;
 
-  const emailValido = validarEmail(emailValue);
-  const passwordValida = passwordValue.length > 0;
+  let formularioValido = true;
 
-  // Validar correo.
-  setError(
-    email,
-    "emailError",
-    emailValue.length === 0
-      ? "Escribe tu correo electrónico."
-      : !emailValido
-        ? "Ingresa un correo electrónico válido."
-        : ""
-  );
+  if (!validarEmail(correo)) {
+    setError(email, "emailError", "Ingresa un correo electrónico válido.");
+    formularioValido = false;
+  } else {
+    setError(email, "emailError", "");
+  }
 
-  // Validar contraseña.
-  setError(
-    password,
-    "passwordError",
-    passwordValida ? "" : "Escribe tu contraseña."
-  );
+  if (!contrasena.trim()) {
+    setError(password, "passwordError", "Ingresa tu contraseña.");
+    formularioValido = false;
+  } else {
+    setError(password, "passwordError", "");
+  }
 
-  if (!emailValido || !passwordValida) {
+  if (!formularioValido) return;
+
+  if (!window.PicksyAPI) {
     mostrarFeedback(
-      "Revisa los campos marcados para continuar.",
+      "No se pudo cargar el servicio de autenticación.",
       "error"
     );
     return;
   }
 
-  // Comprobar que la API esté disponible.
-  if (typeof PicksyAPI === "undefined") {
-    mostrarFeedback(
-      "No se pudo cargar la conexión con el servidor.",
-      "error"
-    );
-    return;
-  }
+  const submitButton = form.querySelector('button[type="submit"]');
+  const textoOriginal = submitButton.textContent;
 
-  const boton = form.querySelector('button[type="submit"]');
-
-  boton.disabled = true;
-  mostrarFeedback("Iniciando sesión...", "info");
+  submitButton.disabled = true;
+  submitButton.textContent = "Iniciando sesión...";
 
   try {
-    const respuesta = await PicksyAPI.iniciarSesion(
-      emailValue,
-      passwordValue,
-      remember.checked
+    const respuesta = await window.PicksyAPI.iniciarSesion(
+      correo,
+      contrasena,
+      recordar
     );
 
-    // CAMBIO (2FA): el backend responde { requiere_2fa: true, token_2fa } cuando la cuenta
-    // tiene Google Authenticator activado (antes decía requiere2FA / challengeId).
-    // En ese caso todavía NO hay sesión: se guarda el token temporal (dura 5 min) y se pide el código.
-    if (respuesta?.requiere_2fa) {
-
+    // El backend solicita el código de autenticación.
+    if (respuesta.requiere_2fa) {
       if (!respuesta.token_2fa) {
-        throw new Error(
-          "El servidor no proporcionó el identificador de verificación."
-        );
+        throw new Error("No se recibió el token de verificación.");
       }
 
-      // Guardar el identificador temporal para el siguiente paso.
-      sessionStorage.setItem(
-        "picksy2FAChallenge",
-        respuesta.token_2fa
-      );
-      // CAMBIO (2FA): recordar si marcó "Recordar mi sesión", para usarlo al completar el segundo paso.
-      sessionStorage.setItem(
-        "picksy2FARecordar",
-        remember.checked ? "1" : "0"
-      );
+      sessionStorage.setItem("picksy2FAChallenge", respuesta.token_2fa);
+      sessionStorage.setItem("picksy2FARecordar", String(recordar));
+      sessionStorage.removeItem("picksy2FAConfigurar");
 
-      window.location.href = "verificar-2fa.html";
+      location.href = "verificar-2fa.html";
       return;
     }
 
-    // Si no requiere 2FA, continuar al inicio.
-    window.location.href = "index.html";
+    // El backend solicita configurar la autenticación en dos pasos.
+    if (respuesta.requiere_configuracion_2fa) {
+      if (!respuesta.token_2fa) {
+        throw new Error("No se recibió el token para configurar 2FA.");
+      }
+
+      sessionStorage.setItem("picksy2FAChallenge", respuesta.token_2fa);
+      sessionStorage.setItem("picksy2FARecordar", String(recordar));
+      sessionStorage.setItem("picksy2FAConfigurar", "1");
+
+      location.href = "configurar-2fa.html";
+      return;
+    }
+
+    // La API ya guarda el token de sesión en este escenario.
+    if (!respuesta.token) {
+      throw new Error("El servidor no devolvió un token de sesión.");
+    }
+
+    location.href = "index.html";
 
   } catch (error) {
     mostrarFeedback(
-      error.message || "No fue posible iniciar sesión.",
+      error.message || "No fue posible iniciar sesión. Inténtalo nuevamente.",
       "error"
     );
-
   } finally {
-    boton.disabled = false;
+    submitButton.disabled = false;
+    submitButton.textContent = textoOriginal;
   }
 });

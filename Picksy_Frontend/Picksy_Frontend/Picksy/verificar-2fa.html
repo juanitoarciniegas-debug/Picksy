@@ -121,10 +121,10 @@
                 </form>
 
                 <!--
-                    CAMBIO (2FA): los códigos de recuperación todavía NO existen en el backend,
-                    por eso esta parte queda oculta (hidden). Se mostrará cuando el backend los tenga.
+                    CAMBIO (backend): los códigos de recuperación ya existen. Se entregan al crear la cuenta
+                    (8 códigos de un solo uso) y sirven cuando no se tiene el teléfono.
                 -->
-                <div class="auth-divider" hidden>
+                <div class="auth-divider">
                     <span>¿No puedes acceder a Google Authenticator?</span>
                 </div>
 
@@ -132,7 +132,6 @@
                     href="#"
                     id="useRecoveryCode"
                     class="signup-note"
-                    hidden
                 >
                     Utilizar un código de recuperación
                 </a>
@@ -147,8 +146,9 @@
                         <input
                             type="text"
                             id="recoveryCode"
-                            placeholder="Introduce tu código"
+                            placeholder="ABCDE-FGHJK"
                             autocomplete="off"
+                            maxlength="20"
                         >
 
                         <button

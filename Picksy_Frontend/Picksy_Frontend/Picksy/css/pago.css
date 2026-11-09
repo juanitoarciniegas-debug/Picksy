@@ -1,0 +1,71 @@
+/* CAMBIO (pagos): estilos de pago.html. Archivo nuevo: no modifica styles.css ni carrito.css (se apoya en sus clases). */
+
+.pagos { padding-top: 32px; padding-bottom: 56px; max-width: 1040px; margin: 0 auto; }
+.pagos .panel-caja { margin-top: 18px; }
+.aviso-demo { margin: 8px 0 0; padding: 10px 14px; border-radius: 14px; background: var(--pear-light); color: var(--green); font-size: 13px; line-height: 1.5; }
+
+.pagos-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; align-items: start; }
+.pagos-grid-checkout { grid-template-columns: 1fr 340px; }
+.pagos-grid .panel-caja { margin-top: 18px; }
+.resumen-pago { position: sticky; top: 20px; }
+
+.paso-num { display: inline-grid; place-items: center; width: 24px; height: 24px; margin-right: 6px; border-radius: 50%; background: var(--green); color: #fff; font-size: 12px; }
+
+/* opciones elegibles (métodos y planes) */
+.opcion { display: flex; align-items: center; gap: 12px; width: 100%; margin-bottom: 8px; padding: 12px 14px; border: 1px solid var(--line); border-radius: 14px; background: #fff; cursor: pointer; text-align: left; font: inherit; color: var(--ink); }
+.opcion:hover { border-color: var(--green); }
+.opcion.activa { border-color: var(--green); background: var(--green-soft); }
+.opcion[aria-disabled="true"] { opacity: .5; cursor: not-allowed; }
+.opcion input { accent-color: var(--green); flex: none; }
+.opcion-texto { flex: 1; min-width: 0; }
+.opcion-texto strong { display: block; font-size: 14px; }
+.opcion-texto small { color: var(--muted); font-size: 12px; }
+.opcion-derecha { text-align: right; font-size: 13px; font-weight: 800; color: var(--green); white-space: nowrap; }
+.opcion-derecha small { display: block; font-weight: 400; color: var(--muted); }
+.nota-planes { font-size: 12px; margin: 10px 0 0; }
+
+/* lista de métodos guardados */
+.metodo-fila { display: flex; align-items: center; gap: 10px; padding: 10px 0; border-bottom: 1px solid var(--line); font-size: 14px; }
+.metodo-fila:last-child { border-bottom: 0; }
+.metodo-fila .opcion-texto small { display: block; }
+.etiqueta-pred { padding: 2px 8px; border-radius: 999px; background: var(--green-soft); color: var(--green); font-size: 11px; font-weight: 800; }
+
+/* formulario de método */
+.metodo-form { margin-top: 12px; padding: 14px; border: 1px dashed var(--line); border-radius: 14px; background: var(--paper); }
+.metodo-form[hidden] { display: none; }
+.metodo-form .fila-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.metodo-form .nota { font-size: 12px; color: var(--muted); margin: 0; }
+.metodo-form .acciones { display: flex; gap: 8px; margin-top: 6px; }
+.campo-oculto { display: none !important; }
+
+/* resumen */
+.resumen-pago .dialogo-datos { margin-bottom: 16px; }
+.resumen-pago .total-fila dt, .resumen-pago .total-fila dd { font-size: 16px; color: var(--green); }
+.button-wide { width: 100%; }
+
+/* confirmar / éxito */
+.panel-centro { max-width: 520px; margin: 18px auto 0; text-align: center; }
+.panel-centro .dialogo-datos { text-align: left; margin: 16px 0; }
+.icono-pago { display: grid; place-items: center; width: 58px; height: 58px; margin: 0 auto 14px; border-radius: 50%; background: var(--pear-light); color: var(--green); font-size: 26px; }
+.icono-exito { background: var(--green); color: #fff; }
+
+/* estados en el historial */
+.etiqueta-estado.pendiente { background: var(--pear-light); color: var(--green); }
+.etiqueta-estado.pagado { background: var(--green-soft); color: var(--green); }
+.etiqueta-estado.cancelado, .etiqueta-estado.vencido { background: #F4E1E1; color: #B54E51; }
+
+@media (max-width: 860px) {
+  .pagos-grid, .pagos-grid-checkout { grid-template-columns: 1fr; }
+  .resumen-pago { position: static; }
+  .tabla-caja { overflow-x: auto; }
+}
+@media (max-width: 480px) { .metodo-form .fila-2 { grid-template-columns: 1fr; } }
+
+/* CAMBIO (membresía): estado de la membresía y filas de métodos con botón "Quitar" */
+.estado-membresia { display: flex; flex-direction: column; gap: 2px; margin: 14px 0 0; padding: 12px 16px; border-radius: 14px; font-size: 14px; }
+.estado-membresia.activa { background: var(--green-soft); color: var(--green); }
+.estado-membresia.inactiva { background: #F4E1E1; color: #8A3436; }
+.estado-membresia span { font-size: 13px; }
+.metodo-opcion { display: flex; align-items: flex-start; gap: 8px; }
+.metodo-opcion .opcion { flex: 1; }
+.metodo-opcion .button-mini { margin-top: 2px; }

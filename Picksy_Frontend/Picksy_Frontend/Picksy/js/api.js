@@ -1,9 +1,4 @@
-// Picksy · Conexión del frontend con el backend (FastAPI)
-// Colócalo en js/api.js y cárgalo ANTES de los demás scripts:
-//   <script src="js/api.js" defer></script>
-//   <script src="js/login.js" defer></script>
-
-const API_URL = "http://127.0.0.1:8000"; // cambiar cuando el backend se despliegue
+const API_URL = "http://127.0.0.1:8000/api/v1";
 const CLAVE_TOKEN = "picksy_token";
 const CLAVE_USUARIO = "picksy_usuario";
 
@@ -37,6 +32,7 @@ function mensajeDeError(datos, estado) {
   if (datos && typeof datos.detail === "string") return datos.detail;  // errores del backend en español
   if (estado === 422) return "Revisa los datos ingresados.";           // validación de FastAPI
   if (estado === 401) return "Debes iniciar sesión.";
+  if (estado === 429) return "Demasiados intentos. Espera un momento e inténtalo de nuevo.";   // CAMBIO (límite de intentos)
   return "Ocurrió un error. Inténtalo de nuevo.";
 }
 
@@ -62,21 +58,36 @@ async function peticion(ruta, { metodo = "GET", cuerpo, conToken = false } = {})
   let datos = null;
   try { datos = await respuesta.json(); } catch { /* respuesta sin cuerpo */ }
 
+  // CAMBIO (login obligatorio): si el servidor dice que la sesión no sirve (401), se limpia y se vuelve al login.
+  if (!respuesta.ok && conToken && respuesta.status === 401 && ruta !== "/auth/logout" && ruta !== "/auth/2fa/codigos-recuperacion") {
+    Almacen.borrar(CLAVE_TOKEN);
+    Almacen.borrar(CLAVE_USUARIO);
+    window.location.replace("login.html");
+  }
+
   if (!respuesta.ok) throw new ErrorApi(mensajeDeError(datos, respuesta.status), respuesta.status);
+  // CAMBIO (paginación): el total de filas viaja en la cabecera X-Total-Count; se deja disponible en la respuesta.
+  const total = respuesta.headers.get("X-Total-Count");
+  if (total !== null && Array.isArray(datos)) datos.total = Number(total);
   return datos;
 }
 
-// ---------- Cuenta ----------
+
 async function registrar({ nombre, correo, contrasena }) {
   // El backend ignora "nombre" hasta que se agregue esa columna; enviarlo no rompe nada.
   return peticion("/auth/registro", { metodo: "POST", cuerpo: { nombre, correo, contrasena } });
 }
 
+async function confirmarRegistro(tokenRegistro, codigo) {
+  return peticion("/auth/registro/confirmar", { metodo: "POST", cuerpo: { token_registro: tokenRegistro, codigo } });
+}
+
 async function iniciarSesion(correo, contrasena, recordar = false) {
   const datos = await peticion("/auth/login", { metodo: "POST", cuerpo: { correo, contrasena } });
-  // 2FA: si la cuenta tiene verificación en dos pasos, el servidor todavía NO da la sesión:
-  // responde { requiere_2fa: true, token_2fa }. La pantalla debe pedir el código y llamar a completarLogin2FA().
-  if (datos.requiere_2fa) return datos;
+  // CAMBIO (2FA obligatorio): el servidor NUNCA da la sesión solo con la contraseña. Responde una de dos cosas:
+  //  - { requiere_2fa: true, token_2fa }                  -> pedir el código y llamar a completarLogin2FA()
+  //  - { requiere_configuracion_2fa: true, token_2fa }    -> cuenta antigua sin Authenticator: mostrar el QR
+  if (datos.requiere_2fa || datos.requiere_configuracion_2fa) return datos;
   Almacen.guardar(CLAVE_TOKEN, datos.token, recordar);
   return datos;
 }
@@ -89,19 +100,16 @@ async function completarLogin2FA(token2fa, codigo, recordar = false) {
   return datos;
 }
 
-// Genera la clave y el QR (data:image/svg+xml;base64,...) para escanear con la app.
-async function configurar2FA() {
-  return peticion("/auth/2fa/configurar", { metodo: "POST", conToken: true });
+// Cuentas antiguas sin Authenticator: genera la clave y el QR (data:image/svg+xml;base64,...).
+async function configurarPendiente2FA(token2fa) {
+  return peticion("/auth/2fa/pendiente/configurar", { metodo: "POST", cuerpo: { token_2fa: token2fa } });
 }
 
-// Confirma con un código de la app y deja el 2FA activado.
-async function activar2FA(codigo) {
-  return peticion("/auth/2fa/activar", { metodo: "POST", cuerpo: { codigo }, conToken: true });
-}
-
-// Para desactivar se piden la contraseña y un código vigente.
-async function desactivar2FA(contrasena, codigo) {
-  return peticion("/auth/2fa/desactivar", { metodo: "POST", cuerpo: { contrasena, codigo }, conToken: true });
+// Cuentas antiguas: confirma con un código de la app, activa el 2FA y entra (devuelve la sesión).
+async function activarPendiente2FA(token2fa, codigo, recordar = false) {
+  const datos = await peticion("/auth/2fa/pendiente/activar", { metodo: "POST", cuerpo: { token_2fa: token2fa, codigo } });
+  Almacen.guardar(CLAVE_TOKEN, datos.token, recordar);
+  return datos;
 }
 
 async function usuarioActual() {
@@ -135,14 +143,14 @@ async function buscarProductos({ producto, presupuesto, tiendas, actualizar = fa
   const parametros = new URLSearchParams({ producto, presupuesto: String(presupuesto) });
   if (tiendas && tiendas.length) parametros.set("tiendas", tiendas.join(","));
   if (actualizar) parametros.set("actualizar", "true");
-  // conToken: si hay sesión, el backend guarda la búsqueda en el historial del usuario.
-  // Sin sesión la búsqueda funciona igual (solo que no se guarda).
+  // CAMBIO (login obligatorio): la búsqueda exige sesión (sin token el backend responde 401).
   return peticion(`/buscar?${parametros.toString()}`, { conToken: true });
 }
 
 // ---------- Historial (requiere sesión) ----------
-async function listarHistorial() {
-  return peticion("/historial", { conToken: true });
+// CAMBIO (paginación): pagina empieza en 1. La lista devuelta trae además la propiedad .total (todas las búsquedas guardadas).
+async function listarHistorial(pagina = 1, limite = 20) {
+  return peticion(`/historial?pagina=${pagina}&limite=${limite}`, { conToken: true });
 }
 
 async function borrarHistorial() {
@@ -154,12 +162,109 @@ async function borrarBusquedaDelHistorial(id) {
 }
 
 async function listarTiendas() {
-  return peticion("/tiendas");
+  return peticion("/tiendas", { conToken: true });   // CAMBIO (login obligatorio)
+}
+
+// ---------- Administración (solo rol "admin") ----------
+async function listarUsuarios() {
+  return peticion("/admin/usuarios", { conToken: true });
+}
+
+async function eliminarUsuario(id) {
+  return peticion(`/admin/usuarios/${id}`, { metodo: "DELETE", conToken: true });
+}
+
+async function cambiarRol(id, rol) {
+  return peticion(`/admin/usuarios/${id}/rol`, { metodo: "PATCH", cuerpo: { rol }, conToken: true });
+}
+
+// ---------- Recuperar contraseña ----------
+// El servidor siempre responde lo mismo (exista o no el correo) y, si existe, envía un enlace al correo.
+async function solicitarRecuperacion(correo) {
+  return peticion("/auth/recuperar", { metodo: "POST", cuerpo: { correo } });
+}
+
+// "codigo" = código de Google Authenticator (6 dígitos) o un código de recuperación (XXXXX-XXXXX).
+async function restablecerContrasena(token, contrasenaNueva, codigo) {
+  return peticion("/auth/recuperar/restablecer", {
+    metodo: "POST", cuerpo: { token, contrasena_nueva: contrasenaNueva, codigo },
+  });
+}
+
+// ---------- Códigos de recuperación del 2FA ----------
+async function regenerarCodigosRecuperacion(contrasena, codigo) {
+  return peticion("/auth/2fa/codigos-recuperacion", { metodo: "POST", cuerpo: { contrasena, codigo }, conToken: true });
+}
+
+// ---------- Carritos y mochila (RF-13, RF-14, RF-17) ----------
+async function listarCarritos() { return peticion("/carritos", { conToken: true }); }
+async function crearCarrito(nombre, presupuesto) {
+  return peticion("/carritos", { metodo: "POST", cuerpo: { nombre: nombre || null, presupuesto }, conToken: true });
+}
+async function verCarrito(id) { return peticion(`/carritos/${id}`, { conToken: true }); }
+async function editarCarrito(id, cambios) {
+  return peticion(`/carritos/${id}`, { metodo: "PATCH", cuerpo: cambios, conToken: true });
+}
+async function eliminarCarrito(id) { return peticion(`/carritos/${id}`, { metodo: "DELETE", conToken: true }); }
+
+// producto = una opción de /buscar ({tienda, nombre, url, imagen, precio, envio}); prioridad de 1 a 5.
+async function agregarAlCarrito(id, producto, prioridad) {
+  return peticion(`/carritos/${id}/items`, {
+    metodo: "POST", conToken: true,
+    cuerpo: {
+      tienda: producto.tienda, nombre: producto.nombre, url: producto.url, imagen: producto.imagen || null,
+      precio: producto.precio, envio: producto.envio_confirmado ? producto.envio : null, prioridad,
+    },
+  });
+}
+async function cambiarPrioridad(carritoId, itemId, prioridad) {
+  return peticion(`/carritos/${carritoId}/items/${itemId}`, { metodo: "PATCH", cuerpo: { prioridad }, conToken: true });
+}
+async function quitarDelCarrito(carritoId, itemId) {
+  return peticion(`/carritos/${carritoId}/items/${itemId}`, { metodo: "DELETE", conToken: true });
+}
+async function optimizarCarrito(id) { return peticion(`/carritos/${id}/optimizar`, { metodo: "POST", conToken: true }); }
+async function compararCarritos(a, b) { return peticion(`/carritos/comparar?a=${a}&b=${b}`, { conToken: true }); }
+
+// ---------- Variación de precios (RF-16) ----------
+async function variacionDePrecio(url) {
+  return peticion(`/productos/precios?url=${encodeURIComponent(url)}`, { conToken: true });
+}
+
+// ---------- Membresía y pagos (CAMBIO pagos) ----------
+// Picksy no vende los productos: lo único que se cobra es el uso de la página (membresía mensual, semestral o anual).
+// MODO DEMOSTRACIÓN: el pago es simulado. Nunca se envía el número de la tarjeta, solo la marca y los últimos 4 dígitos.
+async function planesMembresia() { return peticion("/pagos/planes", { conToken: true }); }
+async function estadoMembresia() { return peticion("/pagos/membresia", { conToken: true }); }
+async function listarMetodosPago() { return peticion("/pagos/metodos", { conToken: true }); }
+async function agregarMetodoPago(metodo) { return peticion("/pagos/metodos", { metodo: "POST", cuerpo: metodo, conToken: true }); }
+async function eliminarMetodoPago(id) { return peticion(`/pagos/metodos/${id}`, { metodo: "DELETE", conToken: true }); }
+async function iniciarPago(plan, metodoId) {
+  return peticion("/pagos", { metodo: "POST", cuerpo: { plan, metodo_id: metodoId }, conToken: true });
+}
+async function confirmarPago(id) { return peticion(`/pagos/${id}/confirmar`, { metodo: "POST", conToken: true }); }
+async function cancelarPago(id) { return peticion(`/pagos/${id}/cancelar`, { metodo: "POST", conToken: true }); }
+async function listarPagos() { return peticion("/pagos", { conToken: true }); }
+
+// CAMBIO (login obligatorio): las páginas privadas llaman a esto; sin sesión mandan al login.
+function exigirSesion() {
+  if (!hayToken()) {
+    window.location.replace("login.html");
+    return false;
+  }
+  return true;
 }
 
 window.PicksyAPI = {
   registrar, iniciarSesion, usuarioActual, cerrarSesion, hayToken,
   buscarProductos, listarTiendas, ErrorApi,
   listarHistorial, borrarHistorial, borrarBusquedaDelHistorial,
-  completarLogin2FA, configurar2FA, activar2FA, desactivar2FA,
+  confirmarRegistro, completarLogin2FA, configurarPendiente2FA, activarPendiente2FA,
+  listarUsuarios, eliminarUsuario, cambiarRol, exigirSesion,
+  solicitarRecuperacion, restablecerContrasena, regenerarCodigosRecuperacion,
+  listarCarritos, crearCarrito, verCarrito, editarCarrito, eliminarCarrito,
+  agregarAlCarrito, cambiarPrioridad, quitarDelCarrito, optimizarCarrito, compararCarritos,
+  variacionDePrecio,
+  planesMembresia, estadoMembresia, listarMetodosPago, agregarMetodoPago, eliminarMetodoPago,
+  iniciarPago, confirmarPago, cancelarPago, listarPagos,
 };

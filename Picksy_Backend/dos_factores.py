@@ -11,17 +11,21 @@ CAMBIO (2FA obligatorio): el 2FA ya no es opcional.
 CAMBIO (recuperación): en lugar del código de 6 dígitos también se acepta un CÓDIGO DE RECUPERACIÓN (de un solo uso),
 que el usuario recibe al crear su cuenta. Así, quien pierde el teléfono no queda fuera.
 
+CAMBIO (correos): cada vez que se completa un inicio de sesión se envía el correo "¿Acabas de entrar a Picksy?"
+con la fecha, el dispositivo y la IP, y un botón "No fui yo" que lleva a cambiar la contraseña.
+
 Endpoints:
     POST /auth/2fa/login                      segundo paso del login: token_2fa + código (o código de recuperación) -> sesión
     POST /auth/2fa/pendiente/configurar       cuenta antigua: genera la clave y el QR
     POST /auth/2fa/pendiente/activar          cuenta antigua: confirma con un código, activa el 2FA y da la sesión
     POST /auth/2fa/codigos-recuperacion       (con sesión) contraseña + código -> 8 códigos nuevos (los anteriores dejan de servir)
 """
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Request
 from pydantic import BaseModel, Field
 from sqlalchemy import text
 
 import config
+import correos          # CAMBIO (correos): aviso de inicio de sesión
 import limitador
 import totp
 from auth import crear_sesion, usuario_actual, verificar
@@ -83,12 +87,18 @@ def validar_codigo_o_recuperacion(conn, usuario_id: int, fila, codigo: str):
     return ("totp", paso) if paso is not None else (None, None)
 
 
+def _avisar_inicio(tareas: BackgroundTasks, request: Request, correo: str, con_codigo_recuperacion: bool = False) -> None:
+    """CAMBIO (correos): "acabas de entrar a Picksy, ¿fuiste tú?". Se envía después de responder (no demora el login)."""
+    tareas.add_task(correos.inicio_de_sesion, correo, limitador.ip_de(request),
+                    request.headers.get("user-agent"), con_codigo_recuperacion)
+
+
 MENSAJE_VENCIDO = "El inicio de sesión venció. Vuelve a escribir tu correo y contraseña."
 
 
 # ---------- 1. Segundo paso del login ----------
 @router.post("/login")
-def login_segundo_paso(datos: LoginDosPasosEntrada):
+def login_segundo_paso(datos: LoginDosPasosEntrada, request: Request, tareas: BackgroundTasks):
     error = None  # el error se lanza DESPUÉS de cerrar el bloque, para que el contador de intentos se guarde
 
     with engine.begin() as conn:
@@ -112,6 +122,7 @@ def login_segundo_paso(datos: LoginDosPasosEntrada):
                 if tipo == "recuperacion":
                     sesion["uso_codigo_recuperacion"] = True
                     sesion["codigos_restantes"] = totp.codigos_restantes(conn, pendiente.usuario_id)
+                _avisar_inicio(tareas, request, fila.correo, tipo == "recuperacion")
                 return sesion
 
     raise HTTPException(status_code=401, detail=error)
@@ -142,7 +153,7 @@ def configurar_pendiente(datos: TokenEntrada):
 
 # ---------- 3. Cuenta antigua: confirmar el código, activar el 2FA y entrar ----------
 @router.post("/pendiente/activar")
-def activar_pendiente(datos: LoginDosPasosEntrada):
+def activar_pendiente(datos: LoginDosPasosEntrada, request: Request, tareas: BackgroundTasks):
     error = None
 
     with engine.begin() as conn:
@@ -168,6 +179,7 @@ def activar_pendiente(datos: LoginDosPasosEntrada):
                     conn.execute(text("DELETE FROM login_pendientes WHERE token = :t"), {"t": datos.token_2fa})
                     sesion = crear_sesion(conn, pendiente.usuario_id)
                     sesion["codigos_recuperacion"] = totp.generar_codigos_recuperacion(conn, pendiente.usuario_id)
+                    _avisar_inicio(tareas, request, fila.correo)
                     return sesion
 
     raise HTTPException(status_code=401, detail=error)

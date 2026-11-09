@@ -9,6 +9,7 @@ from busqueda import router as busqueda_router
 from carritos import router as carritos_router          # CAMBIO (RF-13/14/17): carritos y mochila
 from dos_factores import router as dos_factores_router
 from historial import router as historial_router
+from pagos import router as pagos_router                # CAMBIO (pagos): métodos de pago, planes y pagos
 from precios import router as precios_router            # CAMBIO (RF-16): variación de precios
 from recuperacion import router as recuperacion_router  # CAMBIO: recuperar contraseña
 
@@ -30,7 +31,7 @@ app.add_middleware(
 
 ROUTERS = [
     auth_router, dos_factores_router, recuperacion_router, busqueda_router,
-    historial_router, carritos_router, precios_router, admin_router,
+    historial_router, carritos_router, precios_router, pagos_router, admin_router,
 ]
 
 # CAMBIO (versionado): la API oficial vive en /api/v1/...
