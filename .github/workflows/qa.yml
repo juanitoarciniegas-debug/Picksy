@@ -4,7 +4,7 @@ name: QA Picksy
 
 on:
   push:
-    branches: [main, version-3]   # CAMBIO (v3): el bot también corre en cada push a la rama de la versión 3
+    branches: [main, version-3, version-4]   # CAMBIO (v3): el bot también corre en cada push a la rama de la versión 3
   pull_request:
   workflow_dispatch:
 
