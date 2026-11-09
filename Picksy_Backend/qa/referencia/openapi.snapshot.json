@@ -62,6 +62,19 @@
       "422"
     ]
   },
+  "DELETE /api/v1/pagos/metodos/{metodo_id}": {
+    "cuerpo": null,
+    "parametros": {
+      "path:metodo_id": {
+        "obligatorio": true,
+        "type": "integer"
+      }
+    },
+    "respuestas": [
+      "204",
+      "422"
+    ]
+  },
   "GET /": {
     "cuerpo": null,
     "parametros": {},
@@ -168,6 +181,47 @@
         "maximum": 100000,
         "minimum": 1,
         "obligatorio": false,
+        "type": "integer"
+      }
+    },
+    "respuestas": [
+      "200",
+      "422"
+    ]
+  },
+  "GET /api/v1/pagos": {
+    "cuerpo": null,
+    "parametros": {},
+    "respuestas": [
+      "200"
+    ]
+  },
+  "GET /api/v1/pagos/membresia": {
+    "cuerpo": null,
+    "parametros": {},
+    "respuestas": [
+      "200"
+    ]
+  },
+  "GET /api/v1/pagos/metodos": {
+    "cuerpo": null,
+    "parametros": {},
+    "respuestas": [
+      "200"
+    ]
+  },
+  "GET /api/v1/pagos/planes": {
+    "cuerpo": null,
+    "parametros": {},
+    "respuestas": [
+      "200"
+    ]
+  },
+  "GET /api/v1/pagos/{pago_id}": {
+    "cuerpo": null,
+    "parametros": {
+      "path:pago_id": {
+        "obligatorio": true,
         "type": "integer"
       }
     },
@@ -596,6 +650,101 @@
     "cuerpo": null,
     "parametros": {
       "path:carrito_id": {
+        "obligatorio": true,
+        "type": "integer"
+      }
+    },
+    "respuestas": [
+      "200",
+      "422"
+    ]
+  },
+  "POST /api/v1/pagos": {
+    "cuerpo": {
+      "campos": {
+        "metodo_id": {
+          "exclusiveMinimum": 0.0,
+          "type": "integer"
+        },
+        "plan": {
+          "type": "string"
+        }
+      },
+      "obligatorios": [
+        "metodo_id",
+        "plan"
+      ],
+      "type": "object"
+    },
+    "parametros": {},
+    "respuestas": [
+      "201",
+      "422"
+    ]
+  },
+  "POST /api/v1/pagos/metodos": {
+    "cuerpo": {
+      "campos": {
+        "alias": {
+          "maxLength": 50,
+          "minLength": 1,
+          "type": "string"
+        },
+        "banco": {
+          "anyOf": [
+            "null",
+            "string"
+          ]
+        },
+        "marca": {
+          "anyOf": [
+            "null",
+            "string"
+          ]
+        },
+        "predeterminado": {
+          "default": false,
+          "type": "boolean"
+        },
+        "tipo": {
+          "type": "string"
+        },
+        "ultimos4": {
+          "anyOf": [
+            "null",
+            "string"
+          ]
+        }
+      },
+      "obligatorios": [
+        "alias",
+        "tipo"
+      ],
+      "type": "object"
+    },
+    "parametros": {},
+    "respuestas": [
+      "201",
+      "422"
+    ]
+  },
+  "POST /api/v1/pagos/{pago_id}/cancelar": {
+    "cuerpo": null,
+    "parametros": {
+      "path:pago_id": {
+        "obligatorio": true,
+        "type": "integer"
+      }
+    },
+    "respuestas": [
+      "200",
+      "422"
+    ]
+  },
+  "POST /api/v1/pagos/{pago_id}/confirmar": {
+    "cuerpo": null,
+    "parametros": {
+      "path:pago_id": {
         "obligatorio": true,
         "type": "integer"
       }
