@@ -18,7 +18,7 @@ AQUI = Path(__file__).resolve().parent
 sys.path.insert(0, str(AQUI.parent))
 sys.path.insert(0, str(AQUI))
 
-from contrato import comparar, normalizar  # noqa: E402
+from contrato import comparar, fila_cambios, normalizar  # noqa: E402
 from main import app  # noqa: E402
 
 SNAPSHOT = AQUI / "referencia" / "openapi.snapshot.json"
@@ -45,7 +45,7 @@ def main():
         CAMBIOS.write_text("# Cambios aprobados del contrato de la API\n\n| Fecha | Motivo | Diferencias |\n|---|---|---|\n",
                            encoding="utf-8")
     with CAMBIOS.open("a", encoding="utf-8") as f:
-        f.write(f"| {date.today().isoformat()} | {motivo} | {'; '.join(diferencias)[:300]} |\n")
+        f.write(fila_cambios(date.today().isoformat(), motivo, diferencias))
     print("\nReferencia actualizada. Haz commit de qa/referencia/.")
 
 

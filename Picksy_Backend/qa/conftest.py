@@ -257,7 +257,7 @@ def pytest_sessionfinish(session, exitstatus):
         "disparador": os.getenv("GITHUB_EVENT_NAME", "local"),
         "commit": _commit(),
         "rama": os.getenv("GITHUB_REF_NAME", "local"),
-        "version_software": os.getenv("QA_VERSION_SW", "v3"),
+        "version_software": os.getenv("QA_VERSION_SW", "v4"),
         "tiendas_reales": "sí" if os.getenv("QA_TIENDAS_REALES") == "1" else "no",
         "duracion_s": round((ahora - _inicio).total_seconds(), 1),
         "enlace_al_run": (f"{os.getenv('GITHUB_SERVER_URL')}/{os.getenv('GITHUB_REPOSITORY')}"

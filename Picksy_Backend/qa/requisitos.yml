@@ -78,3 +78,19 @@ requisitos:
     prioridad: "-"
     propuesto: true
     nota: "Llegó en la v3 sin ID de requisito (lo pidió el profesor)."
+  - id: RF-21
+    titulo: "Membresía de pago y pagos simulados - PROPUESTO por QA"
+    prioridad: "-"
+    propuesto: true
+    nota: "Llegó en la v4 sin ID de requisito. Picksy no vende productos: cobra el uso de la página con planes mensual (12.900), semestral (59.900) y anual (99.900). Métodos de pago (tarjeta crédito/débito, PSE, Nequi) y pago SIMULADO: pendiente -> pagado / cancelado / vencido. Requerimientos debe aprobarlo, rechazarlo o pedir que se retire."
+  - id: RF-22
+    titulo: "Correos de aviso: inicio de sesión, recuperar contraseña y pagos - PROPUESTO por QA"
+    prioridad: "-"
+    propuesto: true
+    nota: "Llegó en la v4 sin ID de requisito. Correo '¿Acabas de entrar a Picksy?', instrucciones para recuperar la contraseña y aviso de cambio, y correos de pago iniciado, confirmado y cancelado. pendiente: que el correo llegue a la bandeja y no a spam (depende del proveedor SMTP y del dominio; solo se verifica en un despliegue)."
+    pendiente: "que el correo llegue a la bandeja de entrada y no a spam (solo se verifica en un despliegue con SMTP real)"
+  - id: RNF-11
+    titulo: "Datos de pago mínimos: nunca se guarda el número completo de la tarjeta ni el CVV - PROPUESTO por QA"
+    prioridad: "-"
+    propuesto: true
+    nota: "Llegó en la v4 sin ID de requisito. Solo se guardan la marca y los últimos 4 dígitos. Relacionado con la Ley 1581 (RNF-07)."

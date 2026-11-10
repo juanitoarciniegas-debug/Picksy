@@ -63,3 +63,11 @@ def comparar(referencia, actual):
         if a["respuestas"] != b["respuestas"]:
             dif.append(f"CÓDIGOS DE RESPUESTA MODIFICADOS en {r}: {a['respuestas']} -> {b['respuestas']}")
     return dif
+
+
+def fila_cambios(fecha, motivo, diferencias):
+    """Línea de la tabla de qa/referencia/CAMBIOS.md. Lleva TODAS las diferencias aprobadas: este archivo es la
+    constancia de qué se aprobó, y recortarlo (antes se cortaba a 300 caracteres) dejaba rutas sin registrar.
+    Se escapa '|' para que no rompa la tabla de Markdown."""
+    limpio = lambda t: str(t).replace("|", "\\|").replace("\n", " ")  # noqa: E731
+    return f"| {fecha} | {limpio(motivo)} | {'; '.join(limpio(d) for d in diferencias)} |\n"
