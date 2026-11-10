@@ -67,7 +67,7 @@ jobs:
       - name: Pruebas lentas de test_api.py (tiendas reales)
         id: lentas
         continue-on-error: true
-        run: pytest test_api.py -v -m slow -p no:cacheprovider --html=reporte_lentas.html --self-contained-html
+        run: pytest test_api.py -v -m slow -p no:cacheprovider --html=reporte_lentas.html --self-contained-html --junitxml=qa_salida/junit_api.xml
 
       - name: Resumen y resultado
         id: res
@@ -86,6 +86,11 @@ jobs:
             echo
             if [ -f qa_salida/resumen.md ]; then cat qa_salida/resumen.md; fi
           } > correo.txt
+
+      - name: Generar informe en Word
+        if: ${{ always() }}
+        continue-on-error: true       # un fallo al armar el Word NUNCA debe poner en rojo al proyecto
+        run: python qa/generar_word.py --entrada qa_salida --requisitos qa/requisitos.yml --otros-fallaron "${{ steps.res.outputs.otros }}"
 
       - name: Guardar registro permanente (rama qa-registros)
         if: ${{ always() }}
@@ -119,4 +124,4 @@ jobs:
           from: "Picksy QA <${{ secrets.MAIL_USERNAME }}>"
           subject: "❌ Picksy QA diario: una tienda real falló"
           body: file://Picksy_Backend/correo.txt
-          attachments: Picksy_Backend/reporte_*.html
+          attachments: Picksy_Backend/reporte_*.html,Picksy_Backend/qa_salida/Informe_QA_*.docx

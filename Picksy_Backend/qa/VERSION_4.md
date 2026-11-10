@@ -31,3 +31,12 @@ Requerimientos debe aprobarlos, rechazarlos o pedir que se retiren (igual que RF
 - Los pagos son **simulados**: cuando haya pasarela real (Wompi, PayU, etc.) hay que rehacer las pruebas de pago y el contrato.
 - Que el correo llegue a la bandeja y no a spam solo se puede verificar en un despliegue con SMTP real.
 - La membresía todavía no limita ninguna función de la página.
+
+## Informe en Word de cada ejecución
+
+Además del correo y del reporte HTML, cada ejecución genera un **informe en Word** (`Informe_QA_<rama>_<fecha>_<commit>.docx`)
+con los datos de la ejecución, el resumen, los hallazgos, el estado de cada requisito y **todos los casos uno por fila**
+(más las pruebas de `test_api.py`). Lo arma `qa/generar_word.py` a partir de `qa_salida/resultados.json`.
+Queda en tres lugares: adjunto al correo, dentro del artefacto `reportes-qa` de la ejecución y, de forma permanente,
+en la rama `qa-registros` (`docs/qa/informes_word/AAAA-MM/`). El texto pasa por el mismo filtro de secretos que el registro.
+Un fallo al armar el Word no pone en rojo al proyecto (`continue-on-error`).

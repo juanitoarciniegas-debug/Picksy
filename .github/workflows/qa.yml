@@ -74,7 +74,7 @@ jobs:
       - name: Pruebas existentes de test_api.py (sin tiendas reales)
         id: api
         if: ${{ !cancelled() }}
-        run: pytest test_api.py -v -m "not slow" -p no:cacheprovider --html=reporte_api.html --self-contained-html
+        run: pytest test_api.py -v -m "not slow" -p no:cacheprovider --html=reporte_api.html --self-contained-html --junitxml=qa_salida/junit_api.xml
 
       - name: Resumen en la página de la ejecución
         if: ${{ always() }}
@@ -102,6 +102,11 @@ jobs:
             echo
             if [ -f qa_salida/resumen.md ]; then cat qa_salida/resumen.md; fi
           } > correo.txt
+
+      - name: Generar informe en Word
+        if: ${{ always() }}
+        continue-on-error: true       # un fallo al armar el Word NUNCA debe poner en rojo al proyecto
+        run: python qa/generar_word.py --entrada qa_salida --requisitos qa/requisitos.yml --otros-fallaron "${{ steps.res.outputs.otros }}"
 
       # Un fallo al guardar el registro NUNCA debe poner en rojo al proyecto.
       - name: Guardar registro permanente (rama qa-registros)
@@ -136,4 +141,4 @@ jobs:
           from: "Picksy QA <${{ secrets.MAIL_USERNAME }}>"
           subject: "${{ steps.res.outputs.icono }} Picksy QA: las pruebas ${{ steps.res.outputs.estado }} (${{ github.ref_name }})"
           body: file://Picksy_Backend/correo.txt
-          attachments: Picksy_Backend/reporte_*.html
+          attachments: Picksy_Backend/reporte_*.html,Picksy_Backend/qa_salida/Informe_QA_*.docx
