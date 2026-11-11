@@ -1,13 +1,13 @@
 # Matriz de trazabilidad (generada por el bot)
 
-Ejecución `42876536524-1` · 2026-11-10 18:35:30 UTC · commit `2cdc204` · versión v1
+Ejecución `43078685502-1` · 2026-11-11 18:33:21 UTC · commit `2cdc204` · versión v1
 
 | Requisito | Prioridad | Título | Estado | Casos que lo cubren |
 |---|---|---|---|---|
 | RF-01 | Alta | Registro con correo y contraseña | Sin prueba | - |
 | RF-02 | Alta | Inicio y cierre de sesión seguros | Sin prueba | - |
 | RF-03 | Media | Sesión activa que expira de forma controlada | Sin prueba | - |
-| RF-04 | Alta | Precio, envío y disponibilidad de las 10 tiendas | Falló | test_humo_conector_responde_con_productos_validos[\xc9xito] (passed)<br>test_humo_conector_responde_con_productos_validos[Ol\xedmpica] (passed)<br>test_humo_conector_responde_con_productos_validos[Homecenter] (passed)<br>test_humo_conector_responde_con_productos_validos[Falabella] (passed)<br>test_humo_conector_responde_con_productos_validos[Alkosto] (passed)<br>test_humo_conector_responde_con_productos_validos[Ktronix] (passed)<br>test_humo_conector_responde_con_productos_validos[Alkomprar] (passed)<br>test_humo_conector_responde_con_productos_validos[Buscalibre] (failed)<br>test_humo_conector_responde_con_productos_validos[Farmatodo] (passed) |
+| RF-04 | Alta | Precio, envío y disponibilidad de las 10 tiendas | Falló | test_humo_conector_responde_con_productos_validos[\xc9xito] (failed)<br>test_humo_conector_responde_con_productos_validos[Ol\xedmpica] (passed)<br>test_humo_conector_responde_con_productos_validos[Homecenter] (passed)<br>test_humo_conector_responde_con_productos_validos[Falabella] (passed)<br>test_humo_conector_responde_con_productos_validos[Alkosto] (passed)<br>test_humo_conector_responde_con_productos_validos[Ktronix] (passed)<br>test_humo_conector_responde_con_productos_validos[Alkomprar] (passed)<br>test_humo_conector_responde_con_productos_validos[Buscalibre] (failed)<br>test_humo_conector_responde_con_productos_validos[Farmatodo] (passed) |
 | RF-05 | Alta | Caché con vigencia y fecha de actualización | Sin prueba | - |
 | RF-06 | Alta | Tienda caída - avisa y continúa con las demás | Sin prueba | - |
 | RF-07 | Alta | Entrada de producto y presupuesto máximo | Sin prueba | - |
