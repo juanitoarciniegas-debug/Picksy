@@ -4,14 +4,15 @@ Historial de búsquedas (B-06 · RF-15).
 - Cada vez que un usuario CON sesión busca, se guarda el término, el presupuesto y un resumen.
 - Si el usuario no ha iniciado sesión, /buscar sigue funcionando igual, pero no se guarda nada.
 - Endpoints (todos requieren sesión):
-    GET    /historial        últimas 50 búsquedas del usuario (la más reciente primero)
+    GET    /historial?pagina=1&limite=20   búsquedas del usuario, la más reciente primero (paginado).
+                                           El total viene en la cabecera X-Total-Count.
     DELETE /historial        borra todo el historial del usuario
     DELETE /historial/{id}   borra una búsqueda
 """
 import json
 from typing import Optional
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query, Response
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from sqlalchemy import text
 
@@ -20,7 +21,8 @@ from database import engine
 
 router = APIRouter(prefix="/historial", tags=["Historial"])
 
-LIMITE = 50
+LIMITE = 20          # CAMBIO (paginación): búsquedas por página por defecto
+LIMITE_MAXIMO = 100
 
 # auto_error=False: si no llega el token, no es error; simplemente no hay usuario.
 _esquema_opcional = HTTPBearer(auto_error=False)
@@ -84,18 +86,27 @@ def guardar_busqueda(usuario: Optional[dict], respuesta: dict) -> None:
 
 
 @router.get("")
-def listar_historial(usuario: dict = Depends(usuario_actual)):
+def listar_historial(
+    response: Response,
+    pagina: int = Query(default=1, ge=1, le=100000, description="Número de página (empieza en 1)"),
+    limite: int = Query(default=LIMITE, ge=1, le=LIMITE_MAXIMO, description="Búsquedas por página"),
+    usuario: dict = Depends(usuario_actual),
+):
     with engine.connect() as conn:
+        total = conn.execute(
+            text("SELECT count(*) FROM historial_busquedas WHERE usuario_id = :u"), {"u": usuario["id"]}
+        ).scalar()
         filas = conn.execute(
             text("""
                 SELECT id, termino, presupuesto, resultado, creado_en
                 FROM historial_busquedas
                 WHERE usuario_id = :u
                 ORDER BY creado_en DESC, id DESC
-                LIMIT :limite
+                LIMIT :limite OFFSET :salto
             """),
-            {"u": usuario["id"], "limite": LIMITE},
+            {"u": usuario["id"], "limite": limite, "salto": (pagina - 1) * limite},
         ).all()
+    response.headers["X-Total-Count"] = str(total)   # CAMBIO (paginación): total para armar "página 2 de 5"
     return [
         {
             "id": f.id,

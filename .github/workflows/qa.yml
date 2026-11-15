@@ -4,7 +4,7 @@ name: QA Picksy
 
 on:
   push:
-    branches: [main]
+    branches: [main, version-3, version-4]   # CAMBIO (v3): el bot también corre en cada push a la rama de la versión 3
   pull_request:
   workflow_dispatch:
 
@@ -22,6 +22,7 @@ jobs:
       DB_HOST: localhost
       DB_PORT: "5432"
       DB_NAME: smartbudget
+      QA_VERSION_SW: v4          # CAMBIO (v4): queda escrito en historial_qa.csv (columna version_software)
       MAIL_USERNAME: ${{ secrets.MAIL_USERNAME }}   # solo para saber si el correo está configurado
 
     services:
@@ -73,7 +74,7 @@ jobs:
       - name: Pruebas existentes de test_api.py (sin tiendas reales)
         id: api
         if: ${{ !cancelled() }}
-        run: pytest test_api.py -v -m "not slow" -p no:cacheprovider --html=reporte_api.html --self-contained-html
+        run: pytest test_api.py -v -m "not slow" -p no:cacheprovider --html=reporte_api.html --self-contained-html --junitxml=qa_salida/junit_api.xml
 
       - name: Resumen en la página de la ejecución
         if: ${{ always() }}
@@ -101,6 +102,11 @@ jobs:
             echo
             if [ -f qa_salida/resumen.md ]; then cat qa_salida/resumen.md; fi
           } > correo.txt
+
+      - name: Generar informe en Word
+        if: ${{ always() }}
+        continue-on-error: true       # un fallo al armar el Word NUNCA debe poner en rojo al proyecto
+        run: python qa/generar_word.py --entrada qa_salida --requisitos qa/requisitos.yml --otros-fallaron "${{ steps.res.outputs.otros }}"
 
       # Un fallo al guardar el registro NUNCA debe poner en rojo al proyecto.
       - name: Guardar registro permanente (rama qa-registros)
@@ -135,4 +141,4 @@ jobs:
           from: "Picksy QA <${{ secrets.MAIL_USERNAME }}>"
           subject: "${{ steps.res.outputs.icono }} Picksy QA: las pruebas ${{ steps.res.outputs.estado }} (${{ github.ref_name }})"
           body: file://Picksy_Backend/correo.txt
-          attachments: Picksy_Backend/reporte_*.html
+          attachments: Picksy_Backend/reporte_*.html,Picksy_Backend/qa_salida/Informe_QA_*.docx

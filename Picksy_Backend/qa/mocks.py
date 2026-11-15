@@ -9,6 +9,7 @@ Se reemplaza solo `buscar` de cada conector: el resto del sistema (caché, base 
 cálculo de totales, historial) sigue siendo el REAL. Así se prueba el código de Picksy,
 no a las tiendas.
 """
+import dataclasses
 import re
 import time
 from datetime import datetime, timezone
@@ -44,6 +45,11 @@ class TiendasSimuladas:
         self.fallos = {}     # nombre de tienda -> excepción que lanza
         self.lentos = {}     # nombre de tienda -> segundos que tarda en responder
         self.llamadas = []   # (tienda, termino): sirve para saber si la caché evitó la consulta
+        # v3 (DEF-01): /buscar descarta los productos cuyo nombre no contiene lo buscado. Para que las pruebas de
+        # reglas (totales, orden, presupuesto...) no dependan de ese filtro, por defecto la tienda simulada
+        # "responde" con el término al inicio del nombre ("qa 1a2b3c Nevera"). Las pruebas del propio filtro
+        # ponen relevantes=False para recibir los nombres EXACTOS que ellas definieron.
+        self.relevantes = True
         for conector in buscador.CONECTORES:
             monkeypatch.setattr(conector, "buscar", self._crear(conector.nombre))
 
@@ -54,7 +60,10 @@ class TiendasSimuladas:
                 time.sleep(self.lentos[nombre])
             if nombre in self.fallos:
                 raise self.fallos[nombre]
-            return list(self.catalogo.get(nombre, []))
+            productos = list(self.catalogo.get(nombre, []))
+            if self.relevantes:
+                productos = [dataclasses.replace(p, nombre=f"{termino} {p.nombre}") for p in productos]
+            return productos
         return buscar
 
     # --- atajos para escribir pruebas legibles ---

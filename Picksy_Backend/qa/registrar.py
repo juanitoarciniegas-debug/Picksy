@@ -5,6 +5,7 @@ Escribe (dentro de la carpeta docs/qa de la rama qa-registros):
   historial_qa.csv                      una fila por ejecución (fuente del informe mensual)
   ejecuciones/AAAA-MM/<fecha>_<id>.md   el detalle caso por caso de esa ejecución
   evidencias/AAAA-MM/<fecha>_<id>_*.html  los reportes HTML de pytest
+  informes_word/AAAA-MM/<fecha>_<id>.docx el informe en Word de la ejecución (si existe)
   matriz_trazabilidad_actual.md         la matriz de la última ejecución
 
 Solo usa la biblioteca estándar. Es idempotente: si se repite con la misma ejecución, reemplaza su fila.
@@ -51,7 +52,7 @@ def datos_minimos():
         "fecha_hora_utc": ahora.strftime("%Y-%m-%d %H:%M:%S"),
         "id_ejecucion": f"{run}-{os.getenv('GITHUB_RUN_ATTEMPT', '1')}" if run else "local-" + ahora.strftime("%Y%m%d%H%M%S"),
         "disparador": os.getenv("GITHUB_EVENT_NAME", "local"), "commit": os.getenv("GITHUB_SHA", ""),
-        "rama": os.getenv("GITHUB_REF_NAME", "local"), "version_software": os.getenv("QA_VERSION_SW", "v1"),
+        "rama": os.getenv("GITHUB_REF_NAME", "local"), "version_software": os.getenv("QA_VERSION_SW", "v4"),
         "tiendas_reales": "sí" if os.getenv("QA_TIENDAS_REALES") == "1" else "no",
         "casos": [{"categoria": "ERROR DE INFRAESTRUCTURA", "caso": "el bot no generó resultados.json",
                    "requisitos": [], "estado": "failed", "duracion_s": 0, "motivo": "Ver el log de la ejecución"}],
@@ -126,6 +127,12 @@ def main():
         ev.mkdir(parents=True, exist_ok=True)
         for ruta in glob.glob(a.reportes):
             shutil.copy(ruta, ev / f"{marca}_{d['id_ejecucion']}_{Path(ruta).name}")
+
+    # El informe en Word de esta ejecución (lo arma qa/generar_word.py) también queda guardado de forma permanente.
+    for ruta in entrada.glob("Informe_QA_*.docx"):
+        carpeta_word = destino / "informes_word" / mes
+        carpeta_word.mkdir(parents=True, exist_ok=True)
+        shutil.copy(ruta, carpeta_word / f"{marca}_{d['id_ejecucion']}.docx")
 
     print(f"Registrada la ejecución {d['id_ejecucion']}: {d['resultado']} -> {destino}")
 

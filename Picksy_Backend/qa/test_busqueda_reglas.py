@@ -7,7 +7,7 @@ from datetime import datetime
 
 import pytest
 
-from ayudas import buscar, buscar_ok
+from ayudas import buscar, buscar_ok, cabecera_por_defecto
 from mocks import producto
 
 PRESUPUESTO = 500_000
@@ -28,7 +28,7 @@ def test_cp07_1_entradas_invalidas_dan_422_y_no_consultan_tiendas(client, tienda
         params["producto"] = prod
     if pres is not None:
         params["presupuesto"] = pres
-    assert client.get("/buscar", params=params).status_code == 422
+    assert client.get("/buscar", params=params, headers=cabecera_por_defecto(client)).status_code == 422
     assert tiendas.llamadas == [], "Una entrada inválida no debe llegar a las tiendas"
 
 

@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Crea una nueva contraseña para tu cuenta de Picksy.">
+    <title>Nueva contraseña | Picksy</title>
+
+    <link rel="stylesheet" href="css/styles.css">
+    <link rel="stylesheet" href="css/cuenta.css">
+    <!-- CAMBIO (backend): api.js debe cargarse ANTES de recuperar.js -->
+    <script src="js/api.js" defer></script>
+    <script src="js/restablecer.js" defer></script>
+</head>
+
+<body class="login-body">
+    <main class="login-layout">
+
+        <section class="login-brand-panel">
+            <a class="brand brand-on-dark" href="index.html">
+                <span class="brand-mark" aria-hidden="true">
+                    <svg viewBox="0 0 48 48">
+                        <path d="M39 7C20 7 8 15 8 29c0 7 5 12 12 12C34 41 40 24 39 7Z"
+                              fill="currentColor"/>
+                        <path d="M10 39C17 28 23 22 33 15"
+                              fill="none" stroke="#F5F4D0"
+                              stroke-width="3" stroke-linecap="round"/>
+                    </svg>
+                </span>
+                <span>picksy</span>
+            </a>
+
+            <div class="login-brand-copy">
+                <span class="eyebrow eyebrow-light">Compra inteligente</span>
+                <h1>Recupera tu acceso.<br><span>Vuelve a ahorrar.</span></h1>
+                <p>
+                    No te preocupes. Te ayudaremos a recuperar el acceso
+                    a tu cuenta de Picksy.
+                </p>
+            </div>
+
+            <span class="panel-note">
+                Pequeñas decisiones. Grandes ahorros.
+            </span>
+        </section>
+
+        <section class="login-form-panel">
+            <div class="login-form-wrap">
+
+                <a class="back-link" href="login.html">
+                    ← Volver al inicio de sesión
+                </a>
+
+                <span class="eyebrow">Recuperación de cuenta</span>
+
+                <h2>Crea tu nueva contraseña</h2>
+
+                <p class="muted">
+                    Escribe tu nueva contraseña y un código de Google Authenticator
+                    (o un código de recuperación) para confirmar que eres tú.
+                </p>
+
+                <form id="resetForm" class="auth-form" novalidate>
+
+                    <label for="newPassword">Nueva contraseña</label>
+                    <input type="password" id="newPassword" placeholder="Mínimo 8 caracteres" autocomplete="new-password" minlength="8" maxlength="50" required>
+                    <small class="field-error" id="newPasswordError"></small>
+
+                    <label for="newPassword2">Repite la contraseña</label>
+                    <input type="password" id="newPassword2" placeholder="Repite la contraseña" autocomplete="new-password" maxlength="50" required>
+                    <small class="field-error" id="newPassword2Error"></small>
+
+                    <label for="resetCode">Código de verificación</label>
+                    <input type="text" id="resetCode" class="codigo-input" placeholder="000000" autocomplete="one-time-code" maxlength="20" required>
+                    <small class="muted">Los 6 dígitos de Google Authenticator, o un código de recuperación como ABCDE-FGHJK.</small>
+                    <small class="field-error" id="resetCodeError"></small>
+
+                    <button class="button button-primary button-wide" type="submit" id="resetBoton">
+                        Cambiar contraseña →
+                    </button>
+
+                    <p class="form-feedback" id="resetFeedback" role="status" aria-live="polite"></p>
+
+                </form>
+
+                <p class="signup-note">
+                    ¿Recordaste tu contraseña?
+                    <a href="login.html">Inicia sesión</a>
+                </p>
+
+            </div>
+        </section>
+
+    </main>
+</body>
+</html>

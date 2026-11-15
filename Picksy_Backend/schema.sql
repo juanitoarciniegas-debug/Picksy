@@ -4,11 +4,68 @@
 -- =====================================================
 
 -- 1. USUARIOS (RF-01 a RF-03)
+--    CAMBIO (2FA/roles): ahora la tabla trae TODO lo que usa el backend (DEF-06):
+--    - totp_*  : datos de Google Authenticator. Todo usuario nuevo nace con el 2FA ya activado.
+--    - rol     : 'usuario' (normal) o 'admin' (puede ver y eliminar usuarios).
 CREATE TABLE IF NOT EXISTS usuarios (
-    id              SERIAL PRIMARY KEY,
-    correo          VARCHAR(255) NOT NULL UNIQUE,   -- UNIQUE: rechaza correos repetidos
-    contrasena_hash VARCHAR(255) NOT NULL,          -- nunca se guarda la contraseña real
-    creado_en       TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    id               SERIAL PRIMARY KEY,
+    correo           VARCHAR(255) NOT NULL UNIQUE,   -- UNIQUE: rechaza correos repetidos
+    contrasena_hash  VARCHAR(255) NOT NULL,          -- nunca se guarda la contraseña real
+    creado_en        TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    totp_secreto     VARCHAR(64),                    -- clave secreta del Google Authenticator
+    totp_activo      BOOLEAN NOT NULL DEFAULT FALSE,
+    totp_ultimo_paso BIGINT NOT NULL DEFAULT 0,      -- evita reutilizar un mismo código de 6 dígitos
+    rol              VARCHAR(20) NOT NULL DEFAULT 'usuario' CHECK (rol IN ('usuario', 'admin'))
+);
+
+-- Si la tabla "usuarios" ya existía (base creada con una versión anterior), estas líneas agregan lo que falta.
+-- En una base nueva no hacen nada. Se pueden ejecutar todas las veces que haga falta.
+ALTER TABLE usuarios ADD COLUMN IF NOT EXISTS totp_secreto     VARCHAR(64);
+ALTER TABLE usuarios ADD COLUMN IF NOT EXISTS totp_activo      BOOLEAN NOT NULL DEFAULT FALSE;
+ALTER TABLE usuarios ADD COLUMN IF NOT EXISTS totp_ultimo_paso BIGINT NOT NULL DEFAULT 0;
+ALTER TABLE usuarios ADD COLUMN IF NOT EXISTS rol              VARCHAR(20) NOT NULL DEFAULT 'usuario'
+    CHECK (rol IN ('usuario', 'admin'));
+
+-- CAMBIO (seguridad): el secreto del Google Authenticator ahora se guarda CIFRADO (clave TOTP_CLAVE del .env).
+-- Un texto cifrado es más largo que 64 caracteres, por eso se amplía la columna.
+ALTER TABLE usuarios ALTER COLUMN totp_secreto TYPE VARCHAR(255);
+
+-- Inicio de sesión a medias: la contraseña ya fue correcta, falta el código del Google Authenticator.
+CREATE TABLE IF NOT EXISTS login_pendientes (
+    token       VARCHAR(64) PRIMARY KEY,
+    usuario_id  INTEGER NOT NULL REFERENCES usuarios(id) ON DELETE CASCADE,
+    expira_en   TIMESTAMPTZ NOT NULL,
+    intentos    INTEGER NOT NULL DEFAULT 0
+);
+
+-- CAMBIO (2FA): registro a medias. El usuario NO existe en "usuarios" hasta que confirme el código del
+-- Google Authenticator; mientras tanto sus datos esperan aquí (y se borran solos al vencer).
+CREATE TABLE IF NOT EXISTS registros_pendientes (
+    token            VARCHAR(64) PRIMARY KEY,
+    correo           VARCHAR(255) NOT NULL,
+    contrasena_hash  VARCHAR(255) NOT NULL,
+    totp_secreto     VARCHAR(255) NOT NULL,
+    expira_en        TIMESTAMPTZ NOT NULL,
+    intentos         INTEGER NOT NULL DEFAULT 0
+);
+CREATE INDEX IF NOT EXISTS idx_registros_pendientes_correo ON registros_pendientes (correo);
+ALTER TABLE registros_pendientes ALTER COLUMN totp_secreto TYPE VARCHAR(255);
+
+-- CAMBIO (recuperación): códigos de recuperación del 2FA (para quien pierde el teléfono).
+-- Solo se guarda el hash; cada código sirve UNA vez.
+CREATE TABLE IF NOT EXISTS codigos_recuperacion (
+    id           SERIAL PRIMARY KEY,
+    usuario_id   INTEGER NOT NULL REFERENCES usuarios(id) ON DELETE CASCADE,
+    codigo_hash  VARCHAR(64) NOT NULL,
+    usado_en     TIMESTAMPTZ,
+    UNIQUE (usuario_id, codigo_hash)
+);
+
+-- CAMBIO (recuperación): enlaces para restablecer la contraseña (válidos poco tiempo; se guarda solo el hash).
+CREATE TABLE IF NOT EXISTS recuperaciones_clave (
+    token_hash  VARCHAR(64) PRIMARY KEY,
+    usuario_id  INTEGER NOT NULL REFERENCES usuarios(id) ON DELETE CASCADE,
+    expira_en   TIMESTAMPTZ NOT NULL
 );
 
 -- 2. TIENDAS (las 10 del alcance)
@@ -64,6 +121,9 @@ CREATE TABLE IF NOT EXISTS carritos (
     creado_en    TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
+-- CAMBIO (RF-14/RF-17): fecha en que la mochila calculó este carrito (NULL = todavía no se ha optimizado).
+ALTER TABLE carritos ADD COLUMN IF NOT EXISTS optimizado_en TIMESTAMPTZ;
+
 -- 7. ITEMS DEL CARRITO (productos con prioridad)
 CREATE TABLE IF NOT EXISTS carrito_items (
     id               SERIAL PRIMARY KEY,
@@ -74,7 +134,11 @@ CREATE TABLE IF NOT EXISTS carrito_items (
     incluido         BOOLEAN NOT NULL DEFAULT FALSE -- TRUE si la mochila lo dejó dentro
 );
 
--- 8. SESIONES (B-02: login, logout y expiración a 24 h, RF-02 y RF-03)
+-- Un producto no puede estar dos veces en el mismo carrito.
+CREATE UNIQUE INDEX IF NOT EXISTS ux_carrito_items_producto ON carrito_items (carrito_id, producto_id);
+CREATE INDEX IF NOT EXISTS idx_carritos_usuario ON carritos (usuario_id);
+
+-- 8. SESIONES (B-02: login, logout y expiración, RF-02 y RF-03; la duración se configura en el .env)
 CREATE TABLE IF NOT EXISTS sesiones (
     token       VARCHAR(100) PRIMARY KEY,
     usuario_id  INTEGER NOT NULL REFERENCES usuarios(id) ON DELETE CASCADE,
@@ -97,6 +161,49 @@ CREATE TABLE IF NOT EXISTS cache_resultados (
     producto_id  INTEGER NOT NULL REFERENCES productos(id) ON DELETE CASCADE,
     PRIMARY KEY (cache_id, producto_id)
 );
+
+-- 11. MÉTODOS DE PAGO (CAMBIO pagos). NUNCA se guarda el número completo de la tarjeta ni el CVV:
+--     solo la marca y los últimos 4 dígitos para que el usuario reconozca cuál es.
+CREATE TABLE IF NOT EXISTS metodos_pago (
+    id             SERIAL PRIMARY KEY,
+    usuario_id     INTEGER NOT NULL REFERENCES usuarios(id) ON DELETE CASCADE,
+    tipo           VARCHAR(20) NOT NULL CHECK (tipo IN ('tarjeta_credito', 'tarjeta_debito', 'pse', 'nequi')),
+    alias          VARCHAR(50) NOT NULL,
+    marca          VARCHAR(20),
+    ultimos4       CHAR(4),
+    banco          VARCHAR(60),
+    predeterminado BOOLEAN NOT NULL DEFAULT FALSE,
+    creado_en      TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS idx_metodos_pago_usuario ON metodos_pago (usuario_id);
+
+-- 12. MEMBRESÍA (CAMBIO pagos): Picksy no vende productos; lo único que se cobra es el uso de la página.
+--     Una fila por usuario con el plan y hasta cuándo está activa. Sin fila (o vencida) = sin membresía.
+CREATE TABLE IF NOT EXISTS membresias (
+    usuario_id INTEGER PRIMARY KEY REFERENCES usuarios(id) ON DELETE CASCADE,
+    plan       VARCHAR(20) NOT NULL,
+    inicia_en  TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    vence_en   TIMESTAMPTZ NOT NULL
+);
+
+-- 13. PAGOS DE LA MEMBRESÍA: nace "pendiente" (se envía el correo), pasa a "pagado" al confirmarlo o a "cancelado".
+--     El precio se guarda al crear el pago: si los precios de los planes cambian después, este pago no cambia.
+CREATE TABLE IF NOT EXISTS pagos_membresia (
+    id                 SERIAL PRIMARY KEY,
+    referencia         VARCHAR(20) NOT NULL UNIQUE,
+    usuario_id         INTEGER NOT NULL REFERENCES usuarios(id) ON DELETE CASCADE,
+    plan               VARCHAR(20) NOT NULL,
+    meses              INTEGER NOT NULL CHECK (meses >= 1),
+    valor              NUMERIC(14,2) NOT NULL CHECK (valor > 0),
+    metodo_id          INTEGER REFERENCES metodos_pago(id) ON DELETE SET NULL,
+    metodo_descripcion VARCHAR(120) NOT NULL,
+    estado             VARCHAR(12) NOT NULL DEFAULT 'pendiente' CHECK (estado IN ('pendiente', 'pagado', 'cancelado')),
+    creado_en          TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    expira_en          TIMESTAMPTZ NOT NULL,
+    pagado_en          TIMESTAMPTZ,
+    membresia_hasta    TIMESTAMPTZ
+);
+CREATE INDEX IF NOT EXISTS idx_pagos_membresia_usuario ON pagos_membresia (usuario_id, creado_en DESC);
 
 -- =====================================================
 -- DATOS INICIALES: las 10 tiendas

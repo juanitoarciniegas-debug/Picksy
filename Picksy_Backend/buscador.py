@@ -58,12 +58,13 @@ def buscar_en_todas(termino: str, tiendas=None, forzar: bool = False):
                 return viejos, f"{conector.nombre} no respondió; se muestran datos guardados anteriormente"
             return [], f"{conector.nombre} no respondió ({type(error).__name__})"
 
-        # 4. Guardar para la próxima vez (solo si hubo resultados)
-        if productos:
-            try:
-                guardar_cache(clave, conector.nombre, productos)
-            except Exception:
-                pass
+        # 4. Guardar para la próxima vez.
+        # CAMBIO (QA DEF-05): también se guarda cuando la tienda no devuelve nada (lista vacía);
+        # cache.py le da una vigencia corta (30 min) a esos resultados vacíos.
+        try:
+            guardar_cache(clave, conector.nombre, productos)
+        except Exception:
+            pass
         return productos, None
 
     pool = ThreadPoolExecutor(max_workers=max(len(conectores), 1))

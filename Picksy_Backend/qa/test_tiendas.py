@@ -8,7 +8,7 @@ import re
 import pytest
 
 import buscador
-from ayudas import consulta_db
+from ayudas import cabecera_por_defecto, consulta_db
 from conftest import REQUISITOS
 
 ERS = set(REQUISITOS["tiendas_ers"])
@@ -19,7 +19,7 @@ def _bd():
 
 
 def _api(client):
-    return {t["nombre"] for t in client.get("/tiendas").json()}
+    return {t["nombre"] for t in client.get("/tiendas", headers=cabecera_por_defecto(client)).json()}
 
 
 @pytest.mark.req("RF-04")
@@ -59,5 +59,5 @@ def test_cp04_2e_los_conectores_cumplen_la_interfaz_y_no_se_repiten():
 
 @pytest.mark.req("RF-04")
 def test_cp04_2f_tiendas_devuelve_nombre_y_especialidad(client):
-    for t in client.get("/tiendas").json():
+    for t in client.get("/tiendas", headers=cabecera_por_defecto(client)).json():
         assert {"nombre", "especialidad"} <= set(t)

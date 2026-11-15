@@ -1,75 +1,155 @@
+
 const form = document.querySelector("#loginForm");
 const email = document.querySelector("#email");
 const password = document.querySelector("#password");
+const remember = document.querySelector("#remember");
 const feedback = document.querySelector("#formFeedback");
+const togglePassword = document.querySelector("#togglePassword");
 
-function setError(input, targetId, message) {
-  const target = document.querySelector(`#${targetId}`);
-  target.textContent = message;
-  input.classList.toggle("invalid", Boolean(message));
-  input.setAttribute("aria-invalid", message ? "true" : "false");
+function validarEmail(valor) {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(valor);
 }
 
-// CAMBIO (backend): el envío ahora es "async" y llama al backend con PicksyAPI (js/api.js).
-// Requiere que js/api.js esté cargado en login.html ANTES de este archivo.
-form?.addEventListener("submit", async (event) => {
+function setError(input, targetId, message) {
+  const errorElement = document.getElementById(targetId);
+
+  errorElement.textContent = message;
+  input.classList.toggle("invalid", Boolean(message));
+  input.setAttribute("aria-invalid", String(Boolean(message)));
+}
+
+function mostrarFeedback(message, type = "info") {
+  feedback.textContent = message;
+  feedback.className = `form-feedback ${type}`;
+}
+
+function limpiarFeedback() {
+  feedback.textContent = "";
+  feedback.className = "form-feedback";
+}
+
+// Validación del correo mientras se escribe.
+email.addEventListener("input", () => {
+  const valor = email.value.trim();
+
+  if (!valor || validarEmail(valor)) {
+    setError(email, "emailError", "");
+  } else {
+    setError(email, "emailError", "Ingresa un correo electrónico válido.");
+  }
+
+  limpiarFeedback();
+});
+
+// Limpiar el error de contraseña al escribir.
+password.addEventListener("input", () => {
+  setError(password, "passwordError", "");
+  limpiarFeedback();
+});
+
+// Mostrar u ocultar contraseña.
+togglePassword.addEventListener("click", () => {
+  const mostrar = password.type === "password";
+
+  password.type = mostrar ? "text" : "password";
+  togglePassword.textContent = mostrar ? "Ocultar" : "Mostrar";
+  togglePassword.setAttribute(
+    "aria-label",
+    mostrar ? "Ocultar contraseña" : "Mostrar contraseña"
+  );
+  togglePassword.setAttribute("aria-pressed", String(mostrar));
+});
+
+// Inicio de sesión.
+form.addEventListener("submit", async (event) => {
   event.preventDefault();
-  const emailValue = email.value.trim();
-  const passwordValue = password.value;
-  const validEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailValue);
-  setError(email, "emailError", emailValue.length === 0 ? "Escribe tu correo electrónico." : (!validEmail ? "Ingresa un correo electrónico válido." : ""));
-  // CAMBIO (backend): se quitó el mínimo de 6 caracteres; la contraseña la valida el servidor.
-  setError(password, "passwordError", passwordValue.length === 0 ? "Escribe tu contraseña." : "");
-  if (!validEmail || passwordValue.length === 0) {
-    feedback.textContent = "Revisa los campos marcados para continuar.";
-    feedback.style.color = "#B54E51";
+  limpiarFeedback();
+
+  const correo = email.value.trim();
+  const contrasena = password.value;
+  const recordar = remember.checked;
+
+  let formularioValido = true;
+
+  if (!validarEmail(correo)) {
+    setError(email, "emailError", "Ingresa un correo electrónico válido.");
+    formularioValido = false;
+  } else {
+    setError(email, "emailError", "");
+  }
+
+  if (!contrasena.trim()) {
+    setError(password, "passwordError", "Ingresa tu contraseña.");
+    formularioValido = false;
+  } else {
+    setError(password, "passwordError", "");
+  }
+
+  if (!formularioValido) return;
+
+  if (!window.PicksyAPI) {
+    mostrarFeedback(
+      "No se pudo cargar el servicio de autenticación.",
+      "error"
+    );
     return;
   }
 
-  if (typeof PicksyAPI === "undefined") {
-    feedback.textContent = "Falta cargar js/api.js en login.html.";
-    feedback.style.color = "#B54E51";
-    return;
-  }
+  const submitButton = form.querySelector('button[type="submit"]');
+  const textoOriginal = submitButton.textContent;
 
-  const boton = form.querySelector('button[type="submit"]');
-  boton.disabled = true;
-  feedback.textContent = "Iniciando sesión...";
-  feedback.style.color = "#65854C";
+  submitButton.disabled = true;
+  submitButton.textContent = "Iniciando sesión...";
+
   try {
-    // "Recordar mi sesión": si está marcado, el token se guarda aunque se cierre el navegador.
-    await PicksyAPI.iniciarSesion(emailValue, passwordValue, document.querySelector("#remember").checked);
-    window.location.href = "index.html";
+    const respuesta = await window.PicksyAPI.iniciarSesion(
+      correo,
+      contrasena,
+      recordar
+    );
+
+    // El backend solicita el código de autenticación.
+    if (respuesta.requiere_2fa) {
+      if (!respuesta.token_2fa) {
+        throw new Error("No se recibió el token de verificación.");
+      }
+
+      sessionStorage.setItem("picksy2FAChallenge", respuesta.token_2fa);
+      sessionStorage.setItem("picksy2FARecordar", String(recordar));
+      sessionStorage.removeItem("picksy2FAConfigurar");
+
+      location.href = "verificar-2fa.html";
+      return;
+    }
+
+    // El backend solicita configurar la autenticación en dos pasos.
+    if (respuesta.requiere_configuracion_2fa) {
+      if (!respuesta.token_2fa) {
+        throw new Error("No se recibió el token para configurar 2FA.");
+      }
+
+      sessionStorage.setItem("picksy2FAChallenge", respuesta.token_2fa);
+      sessionStorage.setItem("picksy2FARecordar", String(recordar));
+      sessionStorage.setItem("picksy2FAConfigurar", "1");
+
+      location.href = "configurar-2fa.html";
+      return;
+    }
+
+    // La API ya guarda el token de sesión en este escenario.
+    if (!respuesta.token) {
+      throw new Error("El servidor no devolvió un token de sesión.");
+    }
+
+    location.href = "index.html";
+
   } catch (error) {
-    feedback.textContent = error.message;
-    feedback.style.color = "#B54E51";
+    mostrarFeedback(
+      error.message || "No fue posible iniciar sesión. Inténtalo nuevamente.",
+      "error"
+    );
   } finally {
-    boton.disabled = false;
+    submitButton.disabled = false;
+    submitButton.textContent = textoOriginal;
   }
-});
-
-[email, password].forEach((input) => input?.addEventListener("input", () => {
-  input.classList.remove("invalid");
-  input.setAttribute("aria-invalid", "false");
-  const error = document.querySelector(`#${input.id}Error`);
-  if (error) error.textContent = "";
-}));
-
-document.querySelector("#togglePassword")?.addEventListener("click", (event) => {
-  const button = event.currentTarget;
-  const show = password.type === "password";
-  password.type = show ? "text" : "password";
-  button.textContent = show ? "Ocultar" : "Ver";
-  button.setAttribute("aria-label", show ? "Ocultar contraseña" : "Mostrar contraseña");
-});
-
-document.querySelector("#forgotPassword")?.addEventListener("click", (event) => {
-  event.preventDefault();
-  feedback.textContent = "La recuperación de contraseña se implementará cuando se conecte el backend.";
-  feedback.style.color = "#65854C";
-});
-document.querySelector("#signupLink")?.addEventListener("click", (event) => {
-  event.preventDefault();
-  feedback.textContent = "El registro será una pantalla posterior del proyecto.";
-  feedback.style.color = "#65854C";
 });
