@@ -45,6 +45,7 @@ ESTADOS = {  # estado de pytest -> (texto, color de fondo)
 }
 BLOQUES = [  # categoría del bot -> título del apartado de hallazgos
     ("ERROR DE INFRAESTRUCTURA", "Errores de infraestructura (base de datos o entorno; no son defectos de Picksy)"),
+    ("TIENDA REAL NO RESPONDIÓ", "Tiendas reales que rechazaron o no contestaron la consulta (suele ser bloqueo de la tienda; revisar si se repite)"),
     ("FALLÓ UNA REGLA", "Fallos de una regla (posible defecto: QA confirma)"),
     ("CAMBIÓ EL CONTRATO", "Cambios en el contrato de la API (QA decide si son intencionales)"),
     ("POSIBLEMENTE CORREGIDO", "Defectos posiblemente corregidos (QA verifica y cierra)"),
@@ -200,6 +201,7 @@ def generar(entrada, requisitos, otros_fallaron=False, salida=None):
     api = leer_junit(entrada / "junit_api.xml")
     general = resultado_global(d, otros_fallaron or any(c["estado"] == "failed" for c in api))
     commit = str(d.get("commit", ""))[:7]
+    diario = d.get("modo") == "diario"     # prueba diaria con tiendas reales: solo el humo de conectores
 
     doc = Document()
     estilo = doc.styles["Normal"]
@@ -217,6 +219,9 @@ def generar(entrada, requisitos, otros_fallaron=False, salida=None):
     r.font.size, r.bold, r.font.color.rgb = Pt(26), True, VERDE_OSC
     parrafo(doc, f"Picksy · versión {t(d.get('version_software'))} · rama {t(d.get('rama'))}", tam=13)
     parrafo(doc, f"Generado por el bot de QA el {hora_colombia(d.get('fecha_hora_utc'))}", tam=10)
+    if diario:
+        parrafo(doc, "Prueba diaria con tiendas reales: solo comprueba que cada tienda responda con productos válidos (RF-04). "
+                     "El resto de los requisitos lo prueba «QA Picksy» en cada cambio del código.", tam=10)
 
     titulo(doc, "1. Datos de la ejecución")
     filas = [
@@ -243,10 +248,11 @@ def generar(entrada, requisitos, otros_fallaron=False, salida=None):
         ["Defectos conocidos (siguen abiertos)", str(d.get("xfail", 0))],
         ["Posiblemente corregidos (QA verifica y cierra)", str(d.get("xpass", 0))],
         ["Omitidas", str(d.get("omitidas", 0))],
-        ["Requisitos con prueba ejecutada",
-         f"{d.get('req_cubiertos', '-')} de {d.get('req_totales', '-')}"
-         + (f"  (+{len(d['req_propuestos'])} propuestos, sin aprobar en el ERS)" if d.get("req_propuestos") else "")],
     ]
+    if not diario:
+        resumen.append(["Requisitos con prueba ejecutada",
+                        f"{d.get('req_cubiertos', '-')} de {d.get('req_totales', '-')}"
+                        + (f"  (+{len(d['req_propuestos'])} propuestos, sin aprobar en el ERS)" if d.get("req_propuestos") else "")])
     if api:
         resumen.append(["Pruebas de test_api.py", f"{sum(c['estado'] == 'passed' for c in api)} pasaron de {len(api)}"
                         f" · {sum(c['estado'] == 'failed' for c in api)} fallaron"])
@@ -268,7 +274,7 @@ def generar(entrada, requisitos, otros_fallaron=False, salida=None):
         hubo = True
         titulo(doc, "Fallos en test_api.py", 2)
         tabla(doc, ["Caso", "Motivo"], [9, 16.5], [[t(c["caso"]), t(c["motivo"], 700)] for c in fallos_api])
-    if d.get("requisitos_sin_prueba"):
+    if d.get("requisitos_sin_prueba") and not diario:
         hubo = True
         titulo(doc, "Requisitos sin prueba automática (revisión manual pendiente)", 2)
         parrafo(doc, ", ".join(t(x) for x in d["requisitos_sin_prueba"]))
@@ -276,13 +282,12 @@ def generar(entrada, requisitos, otros_fallaron=False, salida=None):
         parrafo(doc, "Sin hallazgos: todas las pruebas ejecutadas pasaron.")
 
     # ---- requisitos
-    titulo(doc, "4. Estado por requisito")
     por_req = {}
     for c in casos:
         for rid in c.get("requisitos", []):
             por_req[rid] = por_req.get(rid, 0) + 1
     filas = []
-    for rid, etiqueta in d.get("requisitos", {}).items():
+    for rid, etiqueta in ({} if diario else d.get("requisitos", {})).items():
         r = reqs.get(rid, {})
         marca = "  [PROPUESTO]" if r.get("propuesto") else ""
         filas.append([rid, t(r.get("titulo", "-"), 160) + marca, t(r.get("prioridad", "-")), t(etiqueta, 200),
@@ -292,10 +297,13 @@ def generar(entrada, requisitos, otros_fallaron=False, salida=None):
         e = f[3]
         return (ROJO if "Defecto conocido" in e or "Falló" in e else AMBAR if ("Parcial" in e or "Posiblemente" in e
                 or "Bloqueado" in e or "pendiente" in e) else VERDE if e.startswith("Verificado") else GRIS)
-    tabla(doc, ["Requisito", "Título", "Prioridad", "Estado", "Casos"], [2, 11, 2, 9, 1.5], filas, {3: color_req})
+    if not diario:
+        titulo(doc, "4. Estado por requisito")
+        tabla(doc, ["Requisito", "Título", "Prioridad", "Estado", "Casos"], [2, 11, 2, 9, 1.5], filas, {3: color_req})
 
     # ---- detalle de todos los casos
-    titulo(doc, "5. Detalle de todos los casos del bot")
+    n_detalle = 4 if diario else 5          # en la prueba diaria no hay sección de requisitos
+    titulo(doc, f"{n_detalle}. Detalle de todos los casos del bot")
     parrafo(doc, f"{len(casos)} casos, en el orden en que se ejecutaron.", tam=9)
     filas = [[str(i), t(c["caso"]), ", ".join(c.get("requisitos", [])) or "-", ESTADOS.get(c["estado"], (c["estado"], None))[0],
               t(c.get("categoria")), str(c.get("duracion_s", ""))] for i, c in enumerate(casos, 1)]
@@ -305,7 +313,7 @@ def generar(entrada, requisitos, otros_fallaron=False, salida=None):
 
     # ---- test_api.py
     if api:
-        titulo(doc, "6. Pruebas de test_api.py")
+        titulo(doc, f"{n_detalle + 1}. Pruebas de test_api.py")
         filas = [[str(i), t(c["caso"]), ESTADOS[c["estado"]][0], str(c["duracion_s"]), t(c["motivo"], 200)]
                  for i, c in enumerate(api, 1)]
         tabla(doc, ["N.º", "Caso", "Resultado", "Seg.", "Motivo"], [1.2, 10, 3.4, 1.5, 9.4], filas,

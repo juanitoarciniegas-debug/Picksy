@@ -23,6 +23,7 @@ jobs:
       DB_NAME: smartbudget
       QA_VERSION_SW: v3          # CAMBIO (v3): queda escrito en historial_qa.csv (columna version_software)
       QA_TIENDAS_REALES: "1"
+      QA_MODO: diario            # el informe y el resumen solo hablan de lo que esta prueba verifica
       MAIL_USERNAME: ${{ secrets.MAIL_USERNAME }}
 
     services:

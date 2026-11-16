@@ -143,12 +143,17 @@ def termino():
 
 # --------------------------------------------------------------------------- recolección
 PATRON_INFRA = re.compile(r"OperationalError|Connection refused|could not connect|ConnectionError", re.I)
+# Una tienda REAL que rechaza o no contesta la consulta (403, 5xx, tiempo agotado). No es un defecto de Picksy:
+# lo más común es que la tienda bloquee las consultas que llegan desde los servidores de GitHub.
+PATRON_TIENDA_REAL = re.compile(r"HTTPStatusError|Client error|Server error|Timeout|ConnectError|ReadError|RemoteProtocolError", re.I)
 
 
 def _categoria(estado, marcas, razon):
     if estado == "failed":
         if PATRON_INFRA.search(razon or ""):
             return "ERROR DE INFRAESTRUCTURA"   # fallo del entorno o del bot, NO del producto
+        if "real" in marcas and PATRON_TIENDA_REAL.search(razon or ""):
+            return "TIENDA REAL NO RESPONDIÓ"
         return "CAMBIÓ EL CONTRATO" if "contrato" in marcas else "FALLÓ UNA REGLA"
     if estado == "xfailed":
         return "DEFECTO CONOCIDO"
@@ -259,6 +264,8 @@ def pytest_sessionfinish(session, exitstatus):
         "rama": os.getenv("GITHUB_REF_NAME", "local"),
         "version_software": os.getenv("QA_VERSION_SW", "v4"),
         "tiendas_reales": "sí" if os.getenv("QA_TIENDAS_REALES") == "1" else "no",
+        # "diario" = la prueba diaria con tiendas reales (solo el humo de conectores); "completo" = el bot entero.
+        "modo": "diario" if os.getenv("QA_MODO") == "diario" else "completo",
         "duracion_s": round((ahora - _inicio).total_seconds(), 1),
         "enlace_al_run": (f"{os.getenv('GITHUB_SERVER_URL')}/{os.getenv('GITHUB_REPOSITORY')}"
                           f"/actions/runs/{os.getenv('GITHUB_RUN_ID')}"
@@ -288,12 +295,19 @@ def _resumen_md(d, estados):
     L.append(f"**{d['pasaron']} pasaron · {d['fallaron']} fallaron · {d['xfail']} defectos conocidos · "
              f"{d['omitidas']} omitidas · {d['xpass']} posiblemente corregidos** (de {d['total']} casos)")
     L.append("")
-    extra = f" (+{len(d['req_propuestos'])} propuesto)" if d.get("req_propuestos") else ""
-    L.append(f"Requisitos con prueba ejecutada: **{d['req_cubiertos']} de {d['req_totales']}**{extra} · "
-             f"Tiendas reales: {d['tiendas_reales']} · Commit `{d['commit'][:7]}`")
+    diario = d.get("modo") == "diario"
+    if diario:
+        L.append(f"Prueba diaria: solo comprueba que cada tienda real responda con productos (RF-04). "
+                 f"El resto de los requisitos lo prueba «QA Picksy» en cada cambio del código. "
+                 f"Tiendas reales: {d['tiendas_reales']} · Commit `{d['commit'][:7]}`")
+    else:
+        extra = f" (+{len(d['req_propuestos'])} propuesto)" if d.get("req_propuestos") else ""
+        L.append(f"Requisitos con prueba ejecutada: **{d['req_cubiertos']} de {d['req_totales']}**{extra} · "
+                 f"Tiendas reales: {d['tiendas_reales']} · Commit `{d['commit'][:7]}`")
     L.append("")
     bloques = [
         ("ERROR DE INFRAESTRUCTURA", "🔧 Error de infraestructura (base de datos o entorno; NO es defecto de Picksy)"),
+        ("TIENDA REAL NO RESPONDIÓ", "🏬 Una tienda real rechazó o no contestó la consulta (suele ser bloqueo de la tienda a los servidores de GitHub; revisa si se repite)"),
         ("FALLÓ UNA REGLA", "❌ Falló una regla (posible defecto: QA confirma)"),
         ("CAMBIÓ EL CONTRATO", "🔔 Cambió el contrato de la API (QA decide si es intencional)"),
         ("POSIBLEMENTE CORREGIDO", "🟡 Defecto posiblemente corregido (QA verifica y cierra)"),
@@ -308,6 +322,8 @@ def _resumen_md(d, estados):
                 extra = f" ({c['defecto']})" if c["defecto"] else ""
                 L.append(f"- `{c['caso']}`{extra} - {c['motivo'][:400]}")
             L.append("")
+    if diario:      # en la prueba diaria casi todos los requisitos saldrían "Sin prueba": solo confunde, no se muestra
+        return "\n".join(L) + "\n"
     if d["requisitos_sin_prueba"]:
         L += ["### 📋 Requisitos sin prueba", "",
               ", ".join(d["requisitos_sin_prueba"]), ""]
