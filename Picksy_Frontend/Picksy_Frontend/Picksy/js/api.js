@@ -1,4 +1,8 @@
-const API_URL = "http://127.0.0.1:8000/api/v1";
+// CAMBIO (despliegue): el mismo archivo funciona en tu PC y en el servidor.
+// - En tu PC (Live Server o abrir el archivo): usa el backend local, puerto 8000.
+// - En el servidor (cualquier IP o dominio): usa la ruta relativa /api/v1, que Nginx reenvia al backend.
+const EN_LOCAL = location.protocol === "file:" || location.hostname === "127.0.0.1" || location.hostname === "localhost";
+const API_URL = EN_LOCAL ? "http://127.0.0.1:8000/api/v1" : "/api/v1";
 const CLAVE_TOKEN = "picksy_token";
 const CLAVE_USUARIO = "picksy_usuario";
 
