@@ -1,6 +1,6 @@
 # Matriz de trazabilidad (generada por el bot)
 
-Ejecución `44798294820-1` · 2026-11-20 19:03:13 UTC · commit `afe9fe8` · versión v3
+Ejecución `44932669011-1` · 2026-11-21 17:56:29 UTC · commit `afe9fe8` · versión v3
 
 | Requisito | Prioridad | Título | Estado | Casos que lo cubren |
 |---|---|---|---|---|
