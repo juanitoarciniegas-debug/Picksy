@@ -22,3 +22,8 @@ Abrir Picksy_Frontend/Picksy_Frontend/Picksy/index.html con Live Server (puerto 
 ## Documentación
 - ERS: Picksy_ERS_Ingenieria_de_Requerimientos.docx
 - Presentación: Picksy_presentacion.pptx.pdf
+
+## Flujo de ramas
+- develop: desarrollo
+- quality: pruebas (QA)
+- main: produccion
