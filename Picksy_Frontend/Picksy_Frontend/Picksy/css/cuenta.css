@@ -32,3 +32,159 @@
 .codigos-acciones { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 14px; }
 .codigos-confirmar { display: flex; align-items: center; gap: 8px; margin: 10px 0 14px; font-size: 13px; }
 @media (max-width: 480px) { .codigos-lista { grid-template-columns: 1fr; } }
+
+
+/* ==========================================
+   PANEL ADMINISTRATIVO - ROLES
+========================================== */
+
+.admin {
+    padding-top: 45px;
+    padding-bottom: 60px;
+}
+
+.admin-titulo {
+    margin: 12px 0;
+    color: var(--green);
+    font: 800 34px/1.2 var(--font-heading);
+    letter-spacing: -1px;
+}
+
+.admin-tabla-caja {
+    width: 100%;
+    margin-top: 25px;
+    overflow-x: auto;
+    border: 1px solid var(--line);
+    border-radius: 16px;
+    background: white;
+}
+
+.admin-tabla {
+    width: 100%;
+    min-width: 950px;
+    border-collapse: collapse;
+    text-align: left;
+}
+
+.admin-tabla th,
+.admin-tabla td {
+    padding: 15px 16px;
+    border-bottom: 1px solid var(--line);
+    font-size: 12px;
+    vertical-align: middle;
+}
+
+.admin-tabla th {
+    color: #65715F;
+    background: #F5F6EF;
+    font-weight: 800;
+    white-space: nowrap;
+}
+
+.admin-tabla td {
+    color: var(--ink);
+}
+
+.admin-tabla tbody tr:last-child td {
+    border-bottom: 0;
+}
+
+.admin-tabla tbody tr:hover {
+    background: #FCFCF8;
+}
+
+.etiqueta-rol {
+    display: inline-flex;
+    align-items: center;
+    padding: 6px 10px;
+    border-radius: 999px;
+    background: #EEF1E8;
+    color: #586B4C;
+    font-size: 10px;
+    font-weight: 800;
+    white-space: nowrap;
+}
+
+.etiqueta-rol.admin {
+    background: #E4E9D5;
+    color: #35543B;
+}
+
+.etiqueta-rol.premium {
+    background: #F5EFCB;
+    color: #806B25;
+}
+
+.admin-selector-rol {
+    width: 175px;
+    min-height: 38px;
+    padding: 0 10px;
+    border: 1px solid var(--line);
+    border-radius: 9px;
+    background: white;
+    color: var(--green);
+    font-size: 11px;
+    font-weight: 600;
+}
+
+.admin-selector-rol:focus {
+    outline: 2px solid rgba(112, 138, 66, .35);
+    outline-offset: 2px;
+}
+
+.admin-selector-rol:disabled {
+    opacity: .55;
+    cursor: not-allowed;
+    background: #F1F2ED;
+}
+
+.admin .acciones {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    flex-wrap: wrap;
+}
+
+.admin .acciones .button {
+    min-height: 35px;
+    padding: 0 11px;
+    font-size: 10px;
+    white-space: nowrap;
+}
+
+.admin .boton-guardar-rol {
+    background: var(--green);
+    color: white;
+}
+
+.admin .boton-guardar-rol:hover:not(:disabled) {
+    background: #35543B;
+}
+
+.admin .boton-peligro {
+    background: #F9E9E8;
+    color: #A74649;
+}
+
+.admin .boton-peligro:hover:not(:disabled) {
+    background: #F4D9D7;
+}
+
+.admin-nota {
+    margin-top: 15px;
+    text-align: right;
+}
+
+@media (max-width: 620px) {
+    .admin {
+        padding-top: 28px;
+    }
+
+    .admin-titulo {
+        font-size: 28px;
+    }
+
+    .admin-tabla-caja {
+        border-radius: 12px;
+    }
+}

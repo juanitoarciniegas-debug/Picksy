@@ -96,6 +96,104 @@ function mostrarAvisos(avisos) {
   caja.classList.toggle("hidden", !hay);
 }
 
+// ============================================
+// MEMBRESÍA Y LÍMITE DE BÚSQUEDAS
+// ============================================
+
+const LIMITE_BUSQUEDAS_NORMAL = 30;
+
+// Actualiza los indicadores del encabezado.
+
+function actualizarIndicadoresCuenta(usuario) {
+  const badge = $("#planBadge");
+  const contador = $("#searchCounter");
+  const enlacePremium = $("#enlacePremium");
+
+  if (!usuario) return;
+
+  const rol = usuario.rol;
+  const esPremium = usuario.premium === true || rol === "premium";
+  const esUsuarioNormal = rol === "usuario" && !esPremium;
+
+  // Por defecto, ocultamos todos los indicadores.
+  badge?.classList.add("hidden");
+  contador?.classList.add("hidden");
+  enlacePremium?.classList.add("hidden");
+
+  // Usuario normal: insignia, contador y acceso a Premium.
+  if (esUsuarioNormal) {
+    if (badge) {
+      badge.textContent = "Plan normal";
+      badge.classList.remove("hidden");
+      badge.classList.add("normal");
+      badge.classList.remove("premium");
+    }
+
+    if (contador) {
+      const limite = Number(usuario.limite_diario ?? LIMITE_BUSQUEDAS_NORMAL);
+      const usadas = Number(usuario.busquedas_hoy || 0);
+      const restantes = Math.max(0, limite - usadas);
+
+      contador.textContent = `${restantes} de ${limite} búsquedas restantes`;
+      contador.classList.remove("hidden");
+    }
+
+    enlacePremium?.classList.remove("hidden");
+  }
+
+  // Premium: solamente insignia, sin contador.
+  if (esPremium) {
+    if (badge) {
+      badge.textContent = "Premium";
+      badge.classList.remove("hidden");
+      badge.classList.add("premium");
+      badge.classList.remove("normal");
+    }
+  }
+}
+
+
+
+// Consulta nuevamente /auth/me para actualizar el contador.
+async function actualizarContadorBusquedas() {
+
+  try {
+
+    const usuario = await PicksyAPI.usuarioActual();
+
+    if (usuario) {
+      actualizarIndicadoresCuenta(usuario);
+    }
+
+  } catch (error) {
+
+    console.error("No se pudo actualizar el contador:", error);
+
+  }
+}
+
+
+// Muestra el aviso cuando el usuario alcanza su límite.
+function mostrarAvisoPremium(mensaje) {
+
+  const aviso = $("#premiumNotice");
+  const texto = $("#premiumNoticeMessage");
+
+  if (!aviso || !texto) return;
+
+  texto.textContent = mensaje;
+
+  aviso.classList.remove("hidden");
+}
+
+
+// Oculta el aviso al iniciar otra búsqueda.
+function ocultarAvisoPremium() {
+
+  $("#premiumNotice")?.classList.add("hidden");
+
+}
+
 function opciones(cantidad) {
   return cantidad === 1 ? "1 opción" : `${cantidad} opciones`;
 }
@@ -331,34 +429,96 @@ $("#nextPage")?.addEventListener("click", () => {
 });
 
 async function buscarEnBackend(producto, presupuesto) {
+
   if (typeof PicksyAPI === "undefined") {
+
     mostrarEstado("Falta cargar js/api.js en index.html.", "error");
+
     return;
   }
+
   const numero = ++numeroBusqueda;
+
   paginaActual = 1;
+
   const boton = $("#searchForm button[type='submit']");
+
   if (boton) boton.disabled = true;
 
+  ocultarAvisoPremium();
+
   mostrarAvisos([]);
+
   $("#productGrid").innerHTML = "";
+
   $("#emptyState")?.classList.add("hidden");
+
   $("#pagination")?.classList.add("hidden");
-  mostrarEstado(`Buscando «${producto}» en las tiendas… la primera búsqueda puede tardar unos segundos.`, "loading");
+
+  mostrarEstado(
+    `Buscando «${producto}» en las tiendas… la primera búsqueda puede tardar unos segundos.`,
+    "loading"
+  );
 
   try {
-    const datos = await PicksyAPI.buscarProductos({ producto, presupuesto });
-    if (numero !== numeroBusqueda) return; // llegó tarde: ya hay otra búsqueda en curso
-    ultimosResultados = datos;
-    mostrarEstado("");
-    mostrarAvisos(datos.avisos);
-    mostrarResultados();
-    if (haySesion()) cargarHistorial(); // el backend ya guardó esta búsqueda
-  } catch (error) {
+
+    const datos = await PicksyAPI.buscarProductos({
+      producto,
+      presupuesto
+    });
+
     if (numero !== numeroBusqueda) return;
-    mostrarEstado(error.message || "No se pudo completar la búsqueda.", "error");
+
+    ultimosResultados = datos;
+
+    mostrarEstado("");
+
+    mostrarAvisos(datos.avisos);
+
+    mostrarResultados();
+
+    // Actualizamos el contador después de cada búsqueda.
+    await actualizarContadorBusquedas();
+
+    if (haySesion()) {
+      cargarHistorial();
+    }
+
+  } catch (error) {
+
+    if (numero !== numeroBusqueda) return;
+
+    if (error.estado === 429) {
+
+      // Actualizamos las búsquedas restantes.
+      await actualizarContadorBusquedas();
+
+      mostrarEstado("");
+
+      // El mensaje viene directamente del backend.
+      const mensaje =
+        error.datos?.error?.mensaje ||
+        error.datos?.detail ||
+        error.message ||
+        "Has alcanzado el límite de búsquedas de hoy.";
+
+      mostrarAvisoPremium(mensaje);
+
+    } else {
+
+      mostrarEstado(
+        error.message || "No se pudo completar la búsqueda.",
+        "error"
+      );
+
+    }
+
   } finally {
-    if (boton && numero === numeroBusqueda) boton.disabled = false;
+
+    if (boton && numero === numeroBusqueda) {
+      boton.disabled = false;
+    }
+
   }
 }
 
@@ -464,66 +624,56 @@ if (presupuestoGuardado !== null) {
 // que el manejador de arriba (el que llama al backend) usa para validar y guardar el presupuesto;
 // así el formulario tiene un solo manejador y no se hacen dos cosas a la vez.
 function validarPresupuesto() {
+
   const producto = searchInput.value.trim();
+
   const presupuestoTexto = budgetInput.value.trim();
+
+  // Quitamos los separadores de miles y cualquier carácter no numérico.
+  const presupuestoLimpio = presupuestoTexto.replace(/\D/g, "");
 
   // Validamos que el presupuesto sea un número positivo.
   if (
     presupuestoTexto !== "" &&
-    (!Number.isFinite(Number(presupuestoTexto)) ||
-      Number(presupuestoTexto) <= 0)
+    (
+      !presupuestoLimpio ||
+      !Number.isFinite(Number(presupuestoLimpio)) ||
+      Number(presupuestoLimpio) <= 0
+    )
   ) {
+
     searchFeedback.textContent =
       "Ingresa un presupuesto mayor que cero.";
+
     return null;
   }
 
-  // CAMBIO (backend): el backend necesita un presupuesto para filtrar los resultados,
-  // así que ya no se permite buscar con el campo vacío.
   if (presupuestoTexto === "") {
+
     localStorage.removeItem(CLAVE_PRESUPUESTO);
+
     searchFeedback.textContent =
       "Escribe tu presupuesto en pesos, por ejemplo 300000.";
+
     return null;
   }
 
-  // Convertimos el presupuesto de texto a número.
-  const presupuesto = presupuestoTexto === ""
-    ? null
-    : Number(presupuestoTexto);
+  // El valor se convierte correctamente a número.
+  const presupuesto = Number(presupuestoLimpio);
 
-  // ============================================
-  // AQUÍ SE GUARDA EL PRESUPUESTO
-  // localStorage conserva el dato en este navegador.
-  // Si el usuario deja el campo vacío, eliminamos
-  // el presupuesto guardado anteriormente.
-  // ============================================
-  if (presupuesto === null) {
-    localStorage.removeItem(CLAVE_PRESUPUESTO);
-  } else {
-    localStorage.setItem(
-      CLAVE_PRESUPUESTO,
-      String(presupuesto)
-    );
-  }
+  // Guardamos el presupuesto numérico para futuras búsquedas.
+  localStorage.setItem(
+    CLAVE_PRESUPUESTO,
+    String(presupuesto)
+  );
 
-  // Datos disponibles para utilizarlos en la búsqueda.
-  // producto: nombre del artículo.
-  // presupuesto: valor numérico o null si no se indicó.
   console.log("Producto buscado:", producto);
+
   console.log("Presupuesto máximo:", presupuesto);
 
-  // Mensaje de confirmación del presupuesto.
-  if (presupuesto !== null) {
-    searchFeedback.textContent =
-      `Presupuesto establecido: $${presupuesto.toLocaleString("es-CO")}.`;
-  } else {
-    searchFeedback.textContent =
-      "Buscarás sin un límite de presupuesto.";
-  }
+  searchFeedback.textContent =
+    `Presupuesto establecido: $${presupuesto.toLocaleString("es-CO")}.`;
 
-  // CAMBIO (backend): la búsqueda real se hace en el manejador de "submit" de arriba (buscarEnBackend),
-  // que envía "producto" y "presupuesto" al backend.
   return presupuesto;
 }
 
@@ -661,32 +811,78 @@ $("#confirmLogout")?.addEventListener("click", async () => {
 });
 
 async function cargarSesion() {
+
   const saludo = document.querySelector(".user-greeting");
   const avatar = document.querySelector(".avatar");
-  if (!saludo || !avatar || typeof PicksyAPI === "undefined") return;
+
+  if (!saludo || !avatar || typeof PicksyAPI === "undefined") {
+    return;
+  }
 
   try {
+
     const usuario = await PicksyAPI.usuarioActual();
-    if (!usuario) {                       
+
+    if (!usuario) {
+
       window.location.replace("login.html");
+
       return;
     }
 
-    // Por ahora el backend solo guarda el correo; se muestra la parte anterior al "@".
+    // Nombre mostrado en el encabezado.
     const nombre = usuario.correo.split("@")[0];
+
     saludo.textContent = `¡Hola, ${nombre}!`;
-    if (usuario.rol === "admin") $("#enlaceAdmin")?.classList.remove("hidden"); // CAMBIO (roles): solo los admin ven el panel
-    cargarHistorial(); // trae el historial guardado en el backend
+
+    // Indicadores de membresía y búsquedas.
+    actualizarIndicadoresCuenta(usuario);
+
+    // Mostrar las opciones según el rol recibido desde /auth/me.
+    const rol = usuario.rol;
+
+    $("#enlaceAdmin")?.classList.toggle(
+      "hidden",
+      rol !== "admin"
+    );
+
+    $("#enlaceSoporte")?.classList.toggle(
+      "hidden",
+      !["soporte", "admin"].includes(rol)
+    );
+
+    $("#enlaceAnalista")?.classList.toggle(
+      "hidden",
+      !["analista", "admin"].includes(rol)
+    );
+
+    $("#enlaceModeracion")?.classList.toggle(
+      "hidden",
+      !["moderador_tiendas", "admin"].includes(rol)
+    );
+
+
+    // Historial del usuario.
+    cargarHistorial();
+
     avatar.textContent = nombre.charAt(0).toUpperCase();
+
     avatar.title = "Cerrar sesión";
+
     avatar.setAttribute("aria-label", "Cerrar sesión");
 
     avatar.addEventListener("click", (event) => {
+
       event.preventDefault();
+
       abrirModalLogout();
+
     });
-  } catch {
-    // Sin conexión con el backend: se deja la página como está (el aviso lo da cada acción que falle).
+
+  } catch (error) {
+
+    console.error("No se pudo cargar la sesión:", error);
+
   }
 }
 
@@ -700,3 +896,19 @@ try {
     window.setTimeout(() => showToast(avisoPendiente), 600);
   }
 } catch { /* sin almacenamiento */ }
+
+if (budgetInput) {
+  budgetInput.addEventListener("input", () => {
+    // Obtener únicamente los números escritos
+    const valor = budgetInput.value.replace(/\D/g, "");
+
+    // Si el campo está vacío, no hacer nada
+    if (!valor) {
+      budgetInput.value = "";
+      return;
+    }
+
+    // Formatear con separadores de miles colombianos
+    budgetInput.value = Number(valor).toLocaleString("es-CO");
+  });
+}

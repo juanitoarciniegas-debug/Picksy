@@ -1,9 +1,9 @@
 """
 Panel de administrador (roles).
 
-Roles:
-  - 'usuario': usa Picksy (buscar, historial).
-  - 'admin'  : además puede ver la lista de usuarios y eliminarlos.
+Roles (ver roles.py y ROLES_Y_PERMISOS.md):
+  - 'usuario', 'premium', 'soporte', 'analista', 'moderador_tiendas': cada uno con sus permisos.
+  - 'admin'  : además puede ver la lista de usuarios, eliminarlos y cambiar roles.
 
 Reglas de protección de los administradores:
   - Un administrador NO puede eliminarse a sí mismo: solo OTRO administrador puede eliminarlo.
@@ -13,7 +13,7 @@ Reglas de protección de los administradores:
 Endpoints (todos requieren sesión de administrador):
     GET    /admin/usuarios            lista de usuarios
     DELETE /admin/usuarios/{id}       elimina un usuario (y su historial y sesiones)
-    PATCH  /admin/usuarios/{id}/rol   cambia el rol ('usuario' o 'admin')
+    PATCH  /admin/usuarios/{id}/rol   cambia el rol (cualquiera de los 6 roles)
 """
 from typing import Literal
 
@@ -28,7 +28,8 @@ router = APIRouter(prefix="/admin", tags=["Administración"])
 
 
 class RolEntrada(BaseModel):
-    rol: Literal["usuario", "admin"]
+    # Debe coincidir con roles.ROLES (la prueba cp19_20 lo verifica).
+    rol: Literal["usuario", "premium", "soporte", "analista", "moderador_tiendas", "admin"]
 
 
 def _bloquear_admins(conn) -> int:

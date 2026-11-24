@@ -8,8 +8,10 @@ After=network.target
 User=ubuntu
 WorkingDirectory=/home/ubuntu/picksy/backend
 EnvironmentFile=/home/ubuntu/picksy/backend/.env
-# IMPORTANTE: un solo proceso (--workers 1). El límite de intentos de login vive en la memoria del proceso;
-# con varios workers cada uno llevaría su propia cuenta.
+# IMPORTANTE: un solo proceso por servicio (--workers 1). Sin REDIS_URL el límite de intentos de login vive en la
+# memoria del proceso: con varios procesos cada uno llevaría su propia cuenta.
+# Para tener 2 instancias (alta disponibilidad) configura REDIS_URL en el .env y activa también picksy-2.service
+# (ver MANUAL_OPERACION.md, sección "Alta disponibilidad básica").
 ExecStart=/home/ubuntu/picksy/backend/venv/bin/uvicorn main:app --host 127.0.0.1 --port 8000 --workers 1 --proxy-headers
 Restart=always
 RestartSec=3

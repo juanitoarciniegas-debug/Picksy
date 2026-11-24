@@ -1,15 +1,20 @@
-// CAMBIO (despliegue): el mismo archivo funciona en tu PC y en el servidor.
-// - En tu PC (Live Server o abrir el archivo): usa el backend local, puerto 8000.
-// - En el servidor (cualquier IP o dominio): usa la ruta relativa /api/v1, que Nginx reenvia al backend.
 const EN_LOCAL = location.protocol === "file:" || location.hostname === "127.0.0.1" || location.hostname === "localhost";
 const API_URL = EN_LOCAL ? "http://127.0.0.1:8000/api/v1" : "/api/v1";
 const CLAVE_TOKEN = "picksy_token";
 const CLAVE_USUARIO = "picksy_usuario";
 
 class ErrorApi extends Error {
-  constructor(mensaje, estado) {
+  constructor(mensaje, estado, datos = null, retryAfter = null) {
     super(mensaje);
+
+    this.name = "ErrorApi";
     this.estado = estado;
+
+    // Respuesta completa del backend.
+    this.datos = datos;
+
+    // Segundos indicados por la cabecera Retry-After.
+    this.retryAfter = retryAfter;
   }
 }
 
@@ -33,10 +38,27 @@ function hayToken() {
 
 // ---------- Petición base ----------
 function mensajeDeError(datos, estado) {
-  if (datos && typeof datos.detail === "string") return datos.detail;  // errores del backend en español
-  if (estado === 422) return "Revisa los datos ingresados.";           // validación de FastAPI
+
+  // Formato nuevo del backend.
+  if (datos?.error?.mensaje) {
+    return datos.error.mensaje;
+  }
+
+  // Compatibilidad con el formato anterior.
+  if (typeof datos?.detail === "string") {
+    return datos.detail;
+  }
+
+  if (typeof datos?.mensaje === "string") {
+    return datos.mensaje;
+  }
+
+  if (estado === 422) return "Revisa los datos ingresados.";
   if (estado === 401) return "Debes iniciar sesión.";
-  if (estado === 429) return "Demasiados intentos. Espera un momento e inténtalo de nuevo.";   // CAMBIO (límite de intentos)
+  if (estado === 403) return "No tienes permisos para realizar esta acción.";
+  if (estado === 404) return "No se encontró el recurso solicitado.";
+  if (estado === 429) return "Has alcanzado el límite de búsquedas de hoy.";
+
   return "Ocurrió un error. Inténtalo de nuevo.";
 }
 
@@ -69,7 +91,21 @@ async function peticion(ruta, { metodo = "GET", cuerpo, conToken = false } = {})
     window.location.replace("login.html");
   }
 
-  if (!respuesta.ok) throw new ErrorApi(mensajeDeError(datos, respuesta.status), respuesta.status);
+  if (!respuesta.ok) {
+
+  const retryAfterHeader = respuesta.headers.get("Retry-After");
+
+  const retryAfter = retryAfterHeader !== null
+    ? Number(retryAfterHeader)
+    : null;
+
+  throw new ErrorApi(
+    mensajeDeError(datos, respuesta.status),
+    respuesta.status,
+    datos,
+    Number.isFinite(retryAfter) ? retryAfter : null
+  );
+}
   // CAMBIO (paginación): el total de filas viaja en la cabecera X-Total-Count; se deja disponible en la respuesta.
   const total = respuesta.headers.get("X-Total-Count");
   if (total !== null && Array.isArray(datos)) datos.total = Number(total);
@@ -182,6 +218,90 @@ async function cambiarRol(id, rol) {
   return peticion(`/admin/usuarios/${id}/rol`, { metodo: "PATCH", cuerpo: { rol }, conToken: true });
 }
 
+
+// ---------- Soporte (rol soporte y admin) ----------
+
+async function listarUsuariosSoporte(q = "", pagina = 1, limite = 20) {
+  const params = new URLSearchParams({
+    q,
+    pagina: String(pagina),
+    limite: String(limite)
+  });
+
+  return peticion(`/soporte/usuarios?${params.toString()}`, {
+    conToken: true
+  });
+}
+
+async function verUsuarioSoporte(id) {
+  return peticion(`/soporte/usuarios/${id}`, {
+    conToken: true
+  });
+}
+
+async function desbloquearUsuarioSoporte(id) {
+  return peticion(`/soporte/usuarios/${id}/desbloquear`, {
+    metodo: "POST",
+    conToken: true
+  });
+}
+
+async function cerrarSesionesSoporte(id) {
+  return peticion(`/soporte/usuarios/${id}/cerrar-sesiones`, {
+    metodo: "POST",
+    conToken: true
+  });
+}
+
+
+// ---------- Analista (rol analista y admin) ----------
+
+async function resumenAnalista() {
+  return peticion("/analista/resumen", {
+    conToken: true
+  });
+}
+
+async function busquedasPopulares(dias = 30, limite = 10) {
+  const params = new URLSearchParams({
+    dias: String(dias),
+    limite: String(limite)
+  });
+
+  return peticion(`/analista/busquedas-populares?${params.toString()}`, {
+    conToken: true
+  });
+}
+
+async function tiendasGanadoras(dias = 30, limite = 10) {
+  const params = new URLSearchParams({
+    dias: String(dias),
+    limite: String(limite)
+  });
+
+  return peticion(`/analista/tiendas-ganadoras?${params.toString()}`, {
+    conToken: true
+  });
+}
+
+
+// ---------- Moderación de tiendas (rol moderador_tiendas y admin) ----------
+
+async function listarTiendasModeracion() {
+  return peticion("/moderacion/tiendas", {
+    conToken: true
+  });
+}
+
+async function actualizarTiendaModeracion(id, activa) {
+  return peticion(`/moderacion/tiendas/${id}`, {
+    metodo: "PATCH",
+    cuerpo: { activa },
+    conToken: true
+  });
+}
+
+
 // ---------- Recuperar contraseña ----------
 // El servidor siempre responde lo mismo (exista o no el correo) y, si existe, envía un enlace al correo.
 async function solicitarRecuperacion(correo) {
@@ -271,4 +391,20 @@ window.PicksyAPI = {
   variacionDePrecio,
   planesMembresia, estadoMembresia, listarMetodosPago, agregarMetodoPago, eliminarMetodoPago,
   iniciarPago, confirmarPago, cancelarPago, listarPagos,
+
+  // Soporte
+  listarUsuariosSoporte,
+  verUsuarioSoporte,
+  desbloquearUsuarioSoporte,
+  cerrarSesionesSoporte,
+
+  // Analista
+  resumenAnalista,
+  busquedasPopulares,
+  tiendasGanadoras,
+
+  // Moderación de tiendas
+  listarTiendasModeracion,
+  actualizarTiendaModeracion
+
 };

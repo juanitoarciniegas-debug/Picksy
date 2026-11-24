@@ -5,7 +5,9 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from auth import usuario_actual
 from buscador import CONECTORES, NOMBRES, buscar_en_todas
 from historial import guardar_busqueda
+from moderacion import tiendas_inactivas  # CAMBIO (roles): tiendas que el moderador desactivó
 from relevancia import filtrar  # CAMBIO (DEF-01)
+from roles import consumir_busqueda  # CAMBIO (roles): límite diario de las cuentas normales
 
 router = APIRouter(tags=["Búsqueda"])
 
@@ -53,7 +55,20 @@ def buscar(
                 detail=f"Tiendas no reconocidas: {desconocidas}. Disponibles: {NOMBRES}",
             )
 
+    # CAMBIO (roles): las tiendas que el moderador desactivó no se consultan ni salen en los resultados.
+    inactivas = tiendas_inactivas()
+    if inactivas:
+        lista = [n for n in (lista or NOMBRES) if n.lower() not in inactivas]
+        if not lista:
+            raise HTTPException(status_code=503, detail="Las tiendas elegidas están desactivadas por el momento.")
+
+    # CAMBIO (roles): se cuenta la búsqueda del día. Si la cuenta normal ya llegó a su tope responde 429.
+    # Va después de validar, para que una petición mal hecha no gaste una búsqueda.
+    consumir_busqueda(usuario)
+
     productos, avisos = buscar_en_todas(producto, lista, forzar=actualizar)
+    if inactivas:   # por si el resultado vino de la caché de una tienda que se desactivó después
+        productos = [p for p in productos if p.tienda.lower() not in inactivas]
 
     # CAMBIO (DEF-01): se descartan los resultados que no tienen que ver con lo buscado.
     productos, irrelevantes = filtrar(productos, producto)
@@ -93,7 +108,8 @@ def buscar(
 @router.get("/tiendas")
 def listar_tiendas(usuario=Depends(usuario_actual)):  # CAMBIO (login obligatorio)
     """Tiendas disponibles, para que el frontend arme el selector."""
+    inactivas = tiendas_inactivas()   # CAMBIO (roles): el selector no ofrece las tiendas desactivadas
     return [
         {"nombre": c.nombre, "especialidad": getattr(c, "especialidad", "general")}
-        for c in CONECTORES
+        for c in CONECTORES if c.nombre.lower() not in inactivas
     ]

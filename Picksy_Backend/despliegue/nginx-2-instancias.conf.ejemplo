@@ -1,0 +1,36 @@
+# EJEMPLO (no se copia tal cual): lo que hay que CAMBIAR en el archivo real de Nginx del servidor para repartir
+# el tráfico entre 2 instancias de la API. Tu archivo real es  /etc/nginx/sites-available/picksy  (el de producción
+# tiene HTTPS y límites de velocidad que este ejemplo no muestra; no los toques).
+#
+# ANTES de editar, haz una copia para poder volver atrás en 10 segundos:
+#     sudo cp /etc/nginx/sites-available/picksy /etc/nginx/sites-available/picksy.bak
+# DESPUÉS de editar:
+#     sudo nginx -t && sudo systemctl reload nginx        (si nginx -t da error, NO recargues: corrige o restaura el .bak)
+#
+# Esta configuración se probó con 2 instancias reales + Redis: repartió 20/20 de 40 peticiones, con una instancia
+# apagada de golpe respondió 40/40, y reiniciando una por una con tráfico continuo hubo 0 errores.
+
+# 1) Agrega esto ARRIBA del archivo, FUERA del bloque  server { ... }  (junto a los limit_req_zone, si los hay):
+upstream picksy_api {
+    least_conn;                                  # cada petición va a la instancia menos ocupada
+    server 127.0.0.1:8000 max_fails=0;           # picksy.service    (la de siempre)
+    server 127.0.0.1:8001 max_fails=0;           # picksy-2.service  (la nueva)
+    keepalive 16;
+}
+# Por qué  max_fails=0:  así Nginx NUNCA marca una instancia como "caída durante 10 s". Si lo dejas con el valor por
+# defecto, al reiniciar una por una Nginx sigue creyendo caída la que ya volvió y, cuando reinicias la otra, el sitio
+# responde 502 (se vio en la prueba). Con 0, una instancia apagada solo cuesta un intento rechazado (milisegundos) y
+# la petición pasa a la otra; y en cuanto vuelve, recibe tráfico de inmediato.
+# (Si algún día la segunda instancia va en OTRA máquina, ahí sí usa  max_fails=2 fail_timeout=10s  en esa línea.)
+
+# 2) Dentro de  location /api/ { ... }  cambia SOLO estas líneas (lo demás: Host, X-Forwarded-*, limit_req, proxy_read_timeout... se queda igual):
+#
+#        proxy_pass http://picksy_api;                          # antes:  proxy_pass http://127.0.0.1:8000;
+#        proxy_http_version 1.1;                                # nuevo (necesario para keepalive)
+#        proxy_set_header Connection "";                        # nuevo (necesario para keepalive)
+#        proxy_connect_timeout 2s;                              # nuevo: si una instancia no contesta, se pasa a la otra
+#        proxy_next_upstream error timeout http_502 http_503;   # nuevo: si una instancia falla, prueba la otra
+#        proxy_next_upstream_tries 2;                           # nuevo
+#
+# Nota: con una instancia apagada (conexión rechazada) Nginx reintenta en la otra cualquier petición, también los POST.
+# Lo único que puede fallar una vez es una petición que YA estaba en curso dentro de la instancia justo cuando se apaga.

@@ -1,0 +1,58 @@
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Moderación de tiendas | Picksy</title>
+
+  <link rel="stylesheet" href="css/styles.css">
+  <link rel="stylesheet" href="css/roles.css">
+
+  <script>
+    try {
+      const token = localStorage.getItem("picksy_token")
+        || sessionStorage.getItem("picksy_token");
+
+      if (!token) location.replace("login.html");
+    } catch {
+      location.replace("login.html");
+    }
+  </script>
+
+  <script src="js/api.js" defer></script>
+  <script src="js/moderacion-tiendas.js" defer></script>
+</head>
+
+<body class="app-body">
+  <header class="topbar">
+    <a class="brand" href="index.html">
+      <span class="brand-mark">✳</span>
+      <span>picksy</span>
+    </a>
+
+    <div class="header-actions">
+      <a class="button button-secondary" href="index.html">
+        ← Volver a Picksy
+      </a>
+    </div>
+  </header>
+
+  <main class="page-wrap roles-page">
+    <span class="eyebrow">Administración de comercios</span>
+    <h1>Moderación de tiendas</h1>
+
+    <p class="muted">
+      Una tienda desactivada no aparece en las búsquedas
+      hasta que la vuelvas a activar.
+    </p>
+
+    <p id="moderacionFeedback" role="status"
+       aria-live="polite"></p>
+
+    <div id="tiendasLista" class="tiendas-grid">
+      <p>Cargando tiendas...</p>
+    </div>
+  </main>
+</body>
+</html>

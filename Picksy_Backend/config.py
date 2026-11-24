@@ -45,3 +45,25 @@ SMTP_REMITENTE = os.getenv("SMTP_REMITENTE", SMTP_USUARIO or "no-responder@picks
 # Límites de intentos (protección contra adivinar contraseñas o códigos).
 LOGIN_MAX_FALLOS = _entero("LOGIN_MAX_FALLOS", 5)          # fallos por correo ...
 LOGIN_VENTANA_SEG = _entero("LOGIN_VENTANA_SEG", 900)      # ... dentro de estos segundos (15 min)
+
+# CAMBIO (alta disponibilidad) — OPCIONAL. Redis guarda los contadores del límite de intentos FUERA del proceso,
+# para poder correr 2 o más instancias de la API compartiendo el mismo límite (ver limitador.py).
+# Vacío (por defecto) = los contadores viven en la memoria, igual que antes.
+# Ejemplo: REDIS_URL=redis://127.0.0.1:6379/0      (con clave: redis://:LA_CLAVE@127.0.0.1:6379/0)
+REDIS_URL = os.getenv("REDIS_URL", "").strip()
+
+# CAMBIO (disponibilidad de tiendas): si una tienda falla por un problema pasajero de red (corte, error 429 o 5xx),
+# se vuelve a intentar esta cantidad de veces, siempre que quede tiempo dentro del límite de 8 s de la búsqueda.
+# 0 = nunca reintentar (comportamiento anterior).
+TIENDA_REINTENTOS = _entero("TIENDA_REINTENTOS", 1)
+
+# CAMBIO (roles): búsquedas por día de una cuenta con rol 'usuario' SIN membresía activa.
+# Premium (rol o membresía vigente) y el personal (soporte, analista, moderador, admin) no tienen límite.
+# 0 = sin límite para todos (útil para una prueba de carga). Se reinicia a medianoche, hora de Colombia.
+BUSQUEDAS_DIARIAS_USUARIO = _entero("BUSQUEDAS_DIARIAS_USUARIO", 30)
+
+# CAMBIO (ERS: 10 tiendas) — OPCIONAL. Mercado Libre se activa SOLO si hay credenciales de su API.
+# Se obtienen creando una aplicación en el DevCenter de Mercado Libre (ver MANUAL_OPERACION.md, sección 7).
+# Sin ellas la tienda queda sin conector (como hasta ahora) y nada cambia.
+ML_CLIENT_ID = os.getenv("ML_CLIENT_ID", "").strip()
+ML_CLIENT_SECRET = os.getenv("ML_CLIENT_SECRET", "").strip()

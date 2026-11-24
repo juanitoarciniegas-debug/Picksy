@@ -12,6 +12,7 @@ import config
 import limitador
 import totp
 from database import engine
+from roles import estado_cupo
 
 router = APIRouter(prefix="/auth", tags=["Autenticación"])
 
@@ -226,6 +227,19 @@ def solo_admin(usuario=Depends(usuario_actual)):
     return usuario
 
 
+# CAMBIO (roles nuevos): permite el endpoint a los roles indicados y SIEMPRE al administrador.
+# Uso:  permiso = requiere_rol("soporte")   y luego   usuario=Depends(permiso)
+def requiere_rol(*roles: str):
+    permitidos = set(roles) | {"admin"}
+
+    def dependencia(usuario=Depends(usuario_actual)):
+        if usuario["rol"] not in permitidos:
+            raise HTTPException(status_code=403, detail="No tienes permiso para hacer esto")
+        return usuario
+
+    return dependencia
+
+
 # ---------- Logout (RF-02) ----------
 @router.post("/logout")
 def logout(usuario=Depends(usuario_actual)):
@@ -241,4 +255,8 @@ def logout(usuario=Depends(usuario_actual)):
 @router.get("/me")
 def me(usuario=Depends(usuario_actual)):
     # CAMBIO (roles): también se informa el rol, para que el frontend muestre u oculte el panel de administrador.
-    return {"id": usuario["id"], "correo": usuario["correo"], "rol": usuario["rol"], "dos_factores": True}
+    # CAMBIO (roles nuevos): premium, limite_diario, busquedas_hoy y busquedas_restantes (None = sin límite),
+    # para que el frontend muestre la insignia Premium y cuántas búsquedas le quedan al usuario.
+    with engine.connect() as conn:
+        cupo = estado_cupo(conn, usuario)
+    return {"id": usuario["id"], "correo": usuario["correo"], "rol": usuario["rol"], "dos_factores": True, **cupo}
