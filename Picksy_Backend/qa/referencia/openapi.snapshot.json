@@ -89,6 +89,59 @@
       "200"
     ]
   },
+  "GET /api/v1/analista/busquedas-populares": {
+    "cuerpo": null,
+    "parametros": {
+      "query:dias": {
+        "default": 30,
+        "maximum": 365,
+        "minimum": 1,
+        "obligatorio": false,
+        "type": "integer"
+      },
+      "query:limite": {
+        "default": 10,
+        "maximum": 50,
+        "minimum": 1,
+        "obligatorio": false,
+        "type": "integer"
+      }
+    },
+    "respuestas": [
+      "200",
+      "422"
+    ]
+  },
+  "GET /api/v1/analista/resumen": {
+    "cuerpo": null,
+    "parametros": {},
+    "respuestas": [
+      "200"
+    ]
+  },
+  "GET /api/v1/analista/tiendas-ganadoras": {
+    "cuerpo": null,
+    "parametros": {
+      "query:dias": {
+        "default": 30,
+        "maximum": 365,
+        "minimum": 1,
+        "obligatorio": false,
+        "type": "integer"
+      },
+      "query:limite": {
+        "default": 10,
+        "maximum": 50,
+        "minimum": 1,
+        "obligatorio": false,
+        "type": "integer"
+      }
+    },
+    "respuestas": [
+      "200",
+      "422"
+    ]
+  },
   "GET /api/v1/auth/me": {
     "cuerpo": null,
     "parametros": {},
@@ -189,6 +242,13 @@
       "422"
     ]
   },
+  "GET /api/v1/moderacion/tiendas": {
+    "cuerpo": null,
+    "parametros": {},
+    "respuestas": [
+      "200"
+    ]
+  },
   "GET /api/v1/pagos": {
     "cuerpo": null,
     "parametros": {},
@@ -250,6 +310,48 @@
     "parametros": {},
     "respuestas": [
       "200"
+    ]
+  },
+  "GET /api/v1/soporte/usuarios": {
+    "cuerpo": null,
+    "parametros": {
+      "query:limite": {
+        "default": 20,
+        "maximum": 100,
+        "minimum": 1,
+        "obligatorio": false,
+        "type": "integer"
+      },
+      "query:pagina": {
+        "default": 1,
+        "minimum": 1,
+        "obligatorio": false,
+        "type": "integer"
+      },
+      "query:q": {
+        "anyOf": [
+          "null",
+          "string"
+        ],
+        "obligatorio": false
+      }
+    },
+    "respuestas": [
+      "200",
+      "422"
+    ]
+  },
+  "GET /api/v1/soporte/usuarios/{usuario_id}": {
+    "cuerpo": null,
+    "parametros": {
+      "path:usuario_id": {
+        "obligatorio": true,
+        "type": "integer"
+      }
+    },
+    "respuestas": [
+      "200",
+      "422"
     ]
   },
   "GET /api/v1/tiendas": {
@@ -332,6 +434,29 @@
         "type": "integer"
       },
       "path:item_id": {
+        "obligatorio": true,
+        "type": "integer"
+      }
+    },
+    "respuestas": [
+      "200",
+      "422"
+    ]
+  },
+  "PATCH /api/v1/moderacion/tiendas/{tienda_id}": {
+    "cuerpo": {
+      "campos": {
+        "activa": {
+          "type": "boolean"
+        }
+      },
+      "obligatorios": [
+        "activa"
+      ],
+      "type": "object"
+    },
+    "parametros": {
+      "path:tienda_id": {
         "obligatorio": true,
         "type": "integer"
       }
@@ -745,6 +870,32 @@
     "cuerpo": null,
     "parametros": {
       "path:pago_id": {
+        "obligatorio": true,
+        "type": "integer"
+      }
+    },
+    "respuestas": [
+      "200",
+      "422"
+    ]
+  },
+  "POST /api/v1/soporte/usuarios/{usuario_id}/cerrar-sesiones": {
+    "cuerpo": null,
+    "parametros": {
+      "path:usuario_id": {
+        "obligatorio": true,
+        "type": "integer"
+      }
+    },
+    "respuestas": [
+      "200",
+      "422"
+    ]
+  },
+  "POST /api/v1/soporte/usuarios/{usuario_id}/desbloquear": {
+    "cuerpo": null,
+    "parametros": {
+      "path:usuario_id": {
         "obligatorio": true,
         "type": "integer"
       }

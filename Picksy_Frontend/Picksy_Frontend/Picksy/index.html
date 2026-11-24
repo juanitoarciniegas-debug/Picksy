@@ -38,11 +38,44 @@
       <!-- CAMBIO (backend): carritos con mochila (RF-13/14/17) -->
       <a class="nav-link" href="carrito.html">Mis carritos</a>
       <a class="nav-link" href="pago.html">Membresía</a>
+
+      <a href="pago.html" id="enlacePremium" class="button button-primary hidden">
+        Hazte Premium
+      </a>
+
     </nav>
     <div class="header-actions">
-      <!-- CAMBIO (roles): enlace al panel de administrador; app.js lo muestra solo si el usuario tiene rol "admin" -->
-      <a class="button button-secondary hidden" id="enlaceAdmin" href="admin.html">Administrar usuarios</a>
+
+      <!-- Administración: solo admin -->
+      <a class="button button-secondary hidden" id="enlaceAdmin" href="admin.html">
+        Administrar usuarios
+      </a>
+
+      <!-- Soporte: soporte y admin -->
+      <a class="button button-secondary hidden" id="enlaceSoporte" href="soporte.html">
+        Soporte
+      </a>
+
+      <!-- Analista: analista y admin -->
+      <a class="button button-secondary hidden" id="enlaceAnalista" href="analista.html">
+        Analista
+      </a>
+
+      <!-- Moderación: moderador_tiendas y admin -->
+      <a class="button button-secondary hidden" id="enlaceModeracion" href="moderacion-tiendas.html">
+        Moderación de tiendas
+      </a>
+
       <span class="user-greeting">¡Hola!</span>
+
+      <!-- Estado de la membresía del usuario -->
+      <span id="planBadge" class="account-plan">Plan normal</span>
+
+      <!-- Contador de búsquedas disponibles -->
+      <span id="searchCounter" class="search-counter" aria-live="polite">
+        Consultando búsquedas...
+      </span>
+
       <button class="avatar" id="logoutButton" type="button" aria-label="Cerrar sesión">
         V
       </button>
@@ -66,8 +99,8 @@
             aria-label="Producto que quieres buscar">
 
           <!-- El usuario establece su presupuesto máximo -->
-          <input type="number" id="budgetInput" name="presupuesto" placeholder="Presupuesto ($)"
-            aria-label="Presupuesto máximo en pesos colombianos" min="0" step="1000">
+          <input type="text" id="budgetInput" name="presupuesto" placeholder="Presupuesto ($)"
+            aria-label="Presupuesto máximo en pesos colombianos" inputmode="numeric" autocomplete="off">
 
           <button type="submit" class="button button-primary">
             Buscar
@@ -105,6 +138,9 @@
           <h2 id="resultsTitle">Productos destacados</h2>
           <p class="muted" id="resultsSubtitle">Una selección para ayudarte a elegir mejor.</p>
         </div>
+        <!--
+        Los filtros se han convertido en comentarios, para una futura implementacion
+
         <label class="sort-control">Ordenar por
           <select id="sortSelect">
             <option value="recommended">Recomendados</option>
@@ -112,8 +148,9 @@
             <option value="high">Mayor precio</option>
           </select>
         </label>
+        -->
       </div>
-
+      <!--
       <div class="category-row" aria-label="Categorías">
         <button class="category-pill active" data-category="Todos">✳ Todos</button>
         <button class="category-pill" data-category="Tecnología">Tecnología</button>
@@ -121,9 +158,20 @@
         <button class="category-pill" data-category="Moda">Moda</button>
         <button class="category-pill" data-category="Hogar">Hogar</button>
       </div>
+      -->
 
       <!-- CAMBIO (backend): mensaje de "Buscando…"/errores y avisos de tiendas que no respondieron -->
       <p class="search-status hidden" id="searchStatus" role="status" aria-live="polite"></p>
+
+      <!-- Aviso cuando se agotan las búsquedas gratuitas -->
+      <div id="premiumNotice" class="premium-notice hidden" role="alert">
+        <p id="premiumNoticeMessage"></p>
+
+        <a href="pago.html" class="button button-primary">
+          Hazte Premium
+        </a>
+      </div>
+
       <p class="search-notices hidden" id="searchNotices"></p>
 
       <div class="product-grid" id="productGrid" aria-live="polite"></div>

@@ -6,6 +6,9 @@ Es lo más simple y suficiente para la sustentación. Si el profesor pide base d
 Arquitectura: `Navegador → Nginx (HTTPS) → /api/* → Uvicorn (FastAPI) → PostgreSQL`
 y los archivos del frontend los sirve el mismo Nginx.
 
+> Esta guía es para **instalar**. Para el día a día (revisar salud, actualizar, respaldos y restauración, alertas, 2 instancias,
+> medir TPS, plan de retiro) usa [`MANUAL_OPERACION.md`](MANUAL_OPERACION.md).
+
 ## 0. Antes de empezar
 - Una cuenta de AWS y un dominio (o usar la IP pública de la instancia mientras tanto; sin dominio no hay HTTPS).
 - El backend y el frontend en un repositorio de GitHub (**sin** el archivo `.env`; ya está en `.gitignore`).
@@ -59,7 +62,7 @@ Si lo dejas vacío, el enlace se imprime en el log del servidor (`journalctl -u 
 python preparar_base.py     # crea tablas, tiendas y genera TOTP_CLAVE en el .env
 python crear_admin.py       # escanea el QR y GUARDA los códigos de recuperación
 ```
-**Haz copia de seguridad de `TOTP_CLAVE`** (está en `.env`): sin ella nadie podría entrar con Google Authenticator.
+**Haz copia de seguridad de `TOTP_CLAVE`** (está en `.env`): sin ella nadie podría entrar con Google Authenticator. Cómo guardarla y cómo hacer respaldos automáticos de la base: `MANUAL_OPERACION.md`, sección 3.
 
 ## 7. Dejar el backend siempre encendido
 ```bash
@@ -103,4 +106,5 @@ y en el `.env` pon `DB_HOST=<endpoint de RDS>`. El resto es igual (no hace falta
 - Contraseñas con bcrypt; secreto de Google Authenticator **cifrado** en la base (Fernet, `TOTP_CLAVE`); códigos de recuperación guardados como hash.
 - Sesiones cortas (2 h, configurable) y límite de intentos (HTTP 429) contra adivinar contraseñas y códigos.
 - Todos los errores salen con el mismo formato JSON; la API está versionada (`/api/v1`).
-- Una sola instancia de uvicorn (`--workers 1`): el limitador de intentos vive en memoria. Con varios servidores habría que moverlo a Redis o a la base.
+- Una instancia de uvicorn por servicio (`--workers 1`): sin `REDIS_URL` el limitador de intentos vive en la memoria del proceso. Con Redis (`REDIS_URL` en el `.env`) se pueden correr 2 instancias que comparten el mismo límite: `MANUAL_OPERACION.md`, sección 5.
+- Si PostgreSQL se reinicia, la API se reconecta sola (`pool_pre_ping`); si una tienda falla por un corte pasajero, se reintenta una vez.

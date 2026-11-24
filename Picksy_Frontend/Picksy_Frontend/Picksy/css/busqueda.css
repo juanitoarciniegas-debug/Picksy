@@ -2,20 +2,137 @@
    Archivo nuevo: no modifica styles.css. Si se prefiere, su contenido se puede pasar al final de styles.css.
    El campo de presupuesto ya tiene sus estilos en styles.css. */
 
-.product-visual img { width: 100%; height: 172px; object-fit: contain; background: white; }
-.card-actions a.button { text-decoration: none; }
+.product-visual img {
+  width: 100%;
+  height: 172px;
+  object-fit: contain;
+  background: white;
+}
 
-.search-status { margin: 0 0 16px; font-size: 13px; color: var(--muted); }
+.card-actions a.button {
+  text-decoration: none;
+}
+
+.search-status {
+  margin: 0 0 16px;
+  font-size: 13px;
+  color: var(--muted);
+}
+
 .search-status.loading::before {
-  content: ""; display: inline-block; width: 13px; height: 13px; margin-right: 8px; vertical-align: -2px;
-  border: 2px solid var(--green-soft); border-top-color: var(--green); border-radius: 50%;
+  content: "";
+  display: inline-block;
+  width: 13px;
+  height: 13px;
+  margin-right: 8px;
+  vertical-align: -2px;
+  border: 2px solid var(--green-soft);
+  border-top-color: var(--green);
+  border-radius: 50%;
   animation: girar .8s linear infinite;
 }
-.search-status.error { color: #B54E51; }
-.search-notices { margin: 0 0 16px; font-size: 12px; color: #8A7A3E; line-height: 1.6; }
 
-@keyframes girar { to { transform: rotate(360deg); } }
+.search-status.error {
+  color: #B54E51;
+}
+
+.search-notices {
+  margin: 0 0 16px;
+  font-size: 12px;
+  color: #8A7A3E;
+  line-height: 1.6;
+}
+
+@keyframes girar {
+  to {
+    transform: rotate(360deg);
+  }
+}
 
 @media (max-width: 620px) {
-  .product-visual img { height: 135px; }
+  .product-visual img {
+    height: 135px;
+  }
+}
+
+/* ============================================
+   MEMBRESÍA Y CONTADOR DE BÚSQUEDAS
+============================================ */
+
+.account-plan {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 6px 12px;
+  border-radius: 30px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.account-plan.normal {
+  background: var(--green-soft);
+  color: var(--green);
+}
+
+.account-plan.premium {
+  background: var(--pear);
+  color: var(--green-deep);
+}
+
+.search-counter {
+  font-size: 0.78rem;
+  color: var(--muted);
+  white-space: nowrap;
+}
+
+/* ============================================
+   AVISO DE LÍMITE DE BÚSQUEDAS
+============================================ */
+
+.premium-notice {
+  margin: 18px 0;
+  padding: 20px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--paper);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  flex-wrap: wrap;
+}
+
+.premium-notice p {
+  margin: 0;
+  color: var(--ink);
+  line-height: 1.6;
+  flex: 1;
+  min-width: 220px;
+}
+
+.premium-notice .button {
+  flex-shrink: 0;
+}
+
+@media (max-width: 900px) {
+
+  .search-counter {
+    display: none;
+  }
+
+}
+
+@media (max-width: 600px) {
+
+  .premium-notice {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .premium-notice .button {
+    width: 100%;
+    text-align: center;
+  }
+
 }

@@ -120,6 +120,19 @@ def limitador_en_cero():
     yield
 
 
+@pytest.fixture(autouse=True)
+def sin_limite_diario(monkeypatch):
+    """Roles (v4): las cuentas normales tienen un tope de búsquedas por día. Las demás pruebas comparten cuentas y hacen
+    muchas búsquedas, así que arrancan SIN tope. Las pruebas del límite (test_roles_nuevos.py) lo fijan a propósito."""
+    try:
+        import config
+    except ImportError:
+        yield
+        return
+    monkeypatch.setattr(config, "BUSQUEDAS_DIARIAS_USUARIO", 0, raising=False)
+    yield
+
+
 @pytest.fixture(scope="session")
 def client():
     from fastapi.testclient import TestClient

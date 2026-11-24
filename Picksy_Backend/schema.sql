@@ -6,7 +6,8 @@
 -- 1. USUARIOS (RF-01 a RF-03)
 --    CAMBIO (2FA/roles): ahora la tabla trae TODO lo que usa el backend (DEF-06):
 --    - totp_*  : datos de Google Authenticator. Todo usuario nuevo nace con el 2FA ya activado.
---    - rol     : 'usuario' (normal) o 'admin' (puede ver y eliminar usuarios).
+--    - rol     : 'usuario' (normal), 'premium', 'soporte', 'analista', 'moderador_tiendas' o 'admin'
+--                (los 4 intermedios son nuevos: ver roles.py y ROLES_Y_PERMISOS.md).
 CREATE TABLE IF NOT EXISTS usuarios (
     id               SERIAL PRIMARY KEY,
     correo           VARCHAR(255) NOT NULL UNIQUE,   -- UNIQUE: rechaza correos repetidos
@@ -15,7 +16,7 @@ CREATE TABLE IF NOT EXISTS usuarios (
     totp_secreto     VARCHAR(64),                    -- clave secreta del Google Authenticator
     totp_activo      BOOLEAN NOT NULL DEFAULT FALSE,
     totp_ultimo_paso BIGINT NOT NULL DEFAULT 0,      -- evita reutilizar un mismo código de 6 dígitos
-    rol              VARCHAR(20) NOT NULL DEFAULT 'usuario' CHECK (rol IN ('usuario', 'admin'))
+    rol              VARCHAR(20) NOT NULL DEFAULT 'usuario' CHECK (rol IN ('usuario', 'premium', 'soporte', 'analista', 'moderador_tiendas', 'admin'))
 );
 
 -- Si la tabla "usuarios" ya existía (base creada con una versión anterior), estas líneas agregan lo que falta.
@@ -24,7 +25,31 @@ ALTER TABLE usuarios ADD COLUMN IF NOT EXISTS totp_secreto     VARCHAR(64);
 ALTER TABLE usuarios ADD COLUMN IF NOT EXISTS totp_activo      BOOLEAN NOT NULL DEFAULT FALSE;
 ALTER TABLE usuarios ADD COLUMN IF NOT EXISTS totp_ultimo_paso BIGINT NOT NULL DEFAULT 0;
 ALTER TABLE usuarios ADD COLUMN IF NOT EXISTS rol              VARCHAR(20) NOT NULL DEFAULT 'usuario'
-    CHECK (rol IN ('usuario', 'admin'));
+    CHECK (rol IN ('usuario', 'premium', 'soporte', 'analista', 'moderador_tiendas', 'admin'));
+
+-- CAMBIO (roles): una base que ya existía conserva la restricción vieja (solo 'usuario' y 'admin').
+-- Este bloque la cambia por la nueva UNA sola vez: si ya permite los roles nuevos, no hace nada (se puede repetir).
+DO $$
+DECLARE
+    c RECORD;
+    ya_actualizada BOOLEAN := FALSE;
+BEGIN
+    FOR c IN
+        SELECT conname, pg_get_constraintdef(oid) AS definicion
+        FROM pg_constraint
+        WHERE conrelid = 'usuarios'::regclass AND contype = 'c' AND pg_get_constraintdef(oid) ~ '\mrol\M'
+    LOOP
+        IF c.definicion LIKE '%moderador_tiendas%' THEN
+            ya_actualizada := TRUE;
+        ELSE
+            EXECUTE format('ALTER TABLE usuarios DROP CONSTRAINT %I', c.conname);
+        END IF;
+    END LOOP;
+    IF NOT ya_actualizada THEN
+        ALTER TABLE usuarios ADD CONSTRAINT usuarios_rol_check
+            CHECK (rol IN ('usuario', 'premium', 'soporte', 'analista', 'moderador_tiendas', 'admin'));
+    END IF;
+END $$;
 
 -- CAMBIO (seguridad): el secreto del Google Authenticator ahora se guarda CIFRADO (clave TOTP_CLAVE del .env).
 -- Un texto cifrado es más largo que 64 caracteres, por eso se amplía la columna.
@@ -204,6 +229,16 @@ CREATE TABLE IF NOT EXISTS pagos_membresia (
     membresia_hasta    TIMESTAMPTZ
 );
 CREATE INDEX IF NOT EXISTS idx_pagos_membresia_usuario ON pagos_membresia (usuario_id, creado_en DESC);
+
+-- 14. USO DIARIO (CAMBIO roles): cuántas búsquedas hizo cada cuenta cada día (hora de Colombia).
+--     Sirve para el límite diario de las cuentas normales y para las estadísticas del analista.
+--     Es independiente del historial: borrar el historial NO reinicia el contador.
+CREATE TABLE IF NOT EXISTS uso_diario (
+    usuario_id INTEGER NOT NULL REFERENCES usuarios(id) ON DELETE CASCADE,
+    dia        DATE NOT NULL,
+    busquedas  INTEGER NOT NULL DEFAULT 0 CHECK (busquedas >= 0),
+    PRIMARY KEY (usuario_id, dia)
+);
 
 -- =====================================================
 -- DATOS INICIALES: las 10 tiendas

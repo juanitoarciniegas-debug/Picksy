@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Soporte | Picksy</title>
+
+  <link rel="stylesheet" href="css/styles.css">
+  <link rel="stylesheet" href="css/cuenta.css">
+  <link rel="stylesheet" href="css/roles.css">
+
+  <script>
+    try {
+      const token = localStorage.getItem("picksy_token")
+        || sessionStorage.getItem("picksy_token");
+
+      if (!token) location.replace("login.html");
+    } catch {
+      location.replace("login.html");
+    }
+  </script>
+
+  <script src="js/api.js" defer></script>
+  <script src="js/soporte.js" defer></script>
+</head>
+
+<body class="app-body">
+  <header class="topbar">
+    <a class="brand" href="index.html">
+      <span class="brand-mark">✳</span>
+      <span>picksy</span>
+    </a>
+
+    <div class="header-actions">
+      <a class="button button-secondary" href="index.html">
+        ← Volver a Picksy
+      </a>
+    </div>
+  </header>
+
+  <main class="page-wrap roles-page">
+    <span class="eyebrow">Atención al usuario</span>
+    <h1>Centro de soporte</h1>
+    <p class="muted">
+      Consulta cuentas y ayuda a los usuarios a resolver problemas de acceso.
+    </p>
+
+    <form id="soporteSearchForm" class="roles-search">
+      <input
+        type="search"
+        id="soporteQuery"
+        placeholder="Buscar por correo..."
+        aria-label="Correo del usuario"
+      >
+      <button class="button button-primary" type="submit">
+        Buscar
+      </button>
+    </form>
+
+    <p id="soporteFeedback" class="form-feedback"
+       role="status" aria-live="polite"></p>
+
+    <div class="roles-table-wrap">
+      <table class="admin-tabla">
+        <thead>
+          <tr>
+            <th>Correo</th>
+            <th>Rol</th>
+            <th>2FA</th>
+            <th>Membresía</th>
+            <th>Registro</th>
+          </tr>
+        </thead>
+        <tbody id="soporteUsuarios">
+          <tr>
+            <td colspan="5">Cargando usuarios...</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="roles-pagination">
+      <button id="soporteAnterior" class="button button-secondary"
+              type="button">← Anterior</button>
+      <span id="soportePagina">Página 1</span>
+      <button id="soporteSiguiente" class="button button-secondary"
+              type="button">Siguiente →</button>
+    </div>
+
+    <p id="soporteTotal" class="muted"></p>
+  </main>
+
+  <div id="soporteModal" class="modal-overlay hidden"
+       role="dialog" aria-modal="true" aria-labelledby="soporteModalTitulo">
+    <div class="modal-card roles-modal">
+      <button id="soporteCerrarModal" class="modal-close"
+              type="button" aria-label="Cerrar">&times;</button>
+
+      <h2 id="soporteModalTitulo">Ficha del usuario</h2>
+      <div id="soporteFicha"></div>
+
+      <p id="soporteAccionFeedback" role="status"
+         aria-live="polite"></p>
+
+      <div class="modal-actions">
+        <button id="soporteDesbloquear" class="button button-secondary"
+                type="button">Desbloquear cuenta</button>
+        <button id="soporteCerrarSesiones" class="button button-primary"
+                type="button">Cerrar sesiones</button>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

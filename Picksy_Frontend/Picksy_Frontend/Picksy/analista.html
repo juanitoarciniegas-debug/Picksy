@@ -1,0 +1,181 @@
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Panel de estadísticas y analítica de Picksy.">
+
+  <title>Analista | Picksy</title>
+
+  <link rel="stylesheet" href="css/styles.css">
+  <link rel="stylesheet" href="css/roles.css">
+
+  <script src="js/api.js" defer></script>
+  <script src="js/analista.js" defer></script>
+</head>
+
+<body class="app-body">
+
+  <header class="topbar">
+    <a class="brand" href="index.html" aria-label="Picksy, página principal">
+      <span class="brand-mark" aria-hidden="true">✳</span>
+      <span>picksy</span>
+    </a>
+
+    <div class="header-actions">
+      <a class="button button-secondary" href="index.html">
+        ← Volver a Picksy
+      </a>
+    </div>
+  </header>
+
+  <main class="page-wrap roles-page">
+
+    <span class="eyebrow">
+      <span class="eyebrow-dot"></span>
+      Estadísticas de Picksy
+    </span>
+
+    <h1>Panel de analítica</h1>
+
+    <p class="muted">
+      Consulta el comportamiento general de la plataforma.
+      Este tablero utiliza datos agregados y no muestra información personal.
+    </p>
+
+    <p id="analistaFeedback" class="form-feedback"
+       role="status" aria-live="polite"></p>
+
+    <!-- Indicadores generales -->
+    <section class="analista-kpis" aria-label="Indicadores generales">
+
+      <article class="analista-kpi">
+        <span class="muted">Usuarios totales</span>
+        <strong id="kpiUsuarios">—</strong>
+      </article>
+
+      <article class="analista-kpi">
+        <span class="muted">Nuevos usuarios (7 días)</span>
+        <strong id="kpiNuevos">—</strong>
+      </article>
+
+      <article class="analista-kpi">
+        <span class="muted">Membresías activas</span>
+        <strong id="kpiMembresias">—</strong>
+      </article>
+
+      <article class="analista-kpi">
+        <span class="muted">Pagos confirmados</span>
+        <strong id="kpiPagos">—</strong>
+      </article>
+
+      <article class="analista-kpi">
+        <span class="muted">Búsquedas de hoy</span>
+        <strong id="kpiBusquedasHoy">—</strong>
+      </article>
+
+      <article class="analista-kpi">
+        <span class="muted">Búsquedas (7 días)</span>
+        <strong id="kpiBusquedasSemana">—</strong>
+      </article>
+
+      <article class="analista-kpi analista-kpi-ingresos">
+        <span class="muted">Ingresos simulados</span>
+        <strong id="kpiIngresos">—</strong>
+        <small>Simulado · Pesos colombianos (COP)</small>
+      </article>
+
+    </section>
+
+    <!-- Gráficas -->
+    <section class="analista-grid">
+
+      <article class="analista-card">
+        <h2>Actividad de búsqueda</h2>
+        <p class="muted">
+          Búsquedas realizadas durante los últimos 14 días.
+        </p>
+
+        <div id="graficaBusquedas" class="grafica-barras"
+             aria-label="Gráfica de búsquedas por día">
+          <p class="muted">Cargando datos...</p>
+        </div>
+      </article>
+
+      <article class="analista-card">
+        <h2>Usuarios por rol</h2>
+        <p class="muted">
+          Distribución de las cuentas registradas.
+        </p>
+
+        <div class="grafica-dona-layout">
+          <div id="graficaRoles" class="grafica-dona"
+               role="img" aria-label="Distribución de usuarios por rol">
+            <span id="totalDona">—</span>
+          </div>
+
+          <div id="leyendaRoles" class="leyenda-roles"></div>
+        </div>
+      </article>
+
+    </section>
+
+    <!-- Rankings -->
+    <section class="analista-card analista-rankings">
+
+      <div class="analista-ranking-header">
+        <div>
+          <h2>Rankings de Picksy</h2>
+          <p class="muted">
+            Consulta los términos más buscados y las tiendas ganadoras.
+          </p>
+        </div>
+
+        <label class="periodo-control">
+          Periodo
+          <select id="periodoAnalista">
+            <option value="7">Últimos 7 días</option>
+            <option value="30" selected>Últimos 30 días</option>
+            <option value="90">Últimos 90 días</option>
+          </select>
+        </label>
+      </div>
+
+      <div class="analista-grid">
+
+        <article>
+          <h3>Búsquedas populares</h3>
+          <div id="rankingBusquedas" class="analista-ranking">
+            <p class="muted">Cargando ranking...</p>
+          </div>
+        </article>
+
+        <article>
+          <h3>Tiendas ganadoras</h3>
+          <div id="rankingTiendas" class="analista-ranking">
+            <p class="muted">Cargando ranking...</p>
+          </div>
+        </article>
+
+      </div>
+    </section>
+
+    <p class="muted analista-nota">
+      Los ingresos mostrados son simulados. No representan dinero real recibido por Picksy.
+    </p>
+
+  </main>
+
+  <footer class="footer">
+    <a class="brand brand-footer" href="index.html">
+      <span class="brand-mark">✳</span>
+      <span>picksy</span>
+    </a>
+
+    <span>Compra con intención. Ahorra con Picksy.</span>
+    <span>© 2026 Picksy</span>
+  </footer>
+
+</body>
+</html>
